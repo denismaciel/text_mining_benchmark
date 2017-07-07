@@ -10,6 +10,11 @@ if(!require("readr")) install.packages("readr"); library("readr")
 if(!require("glmnet")) install.packages("glmnet"); library("glmnet")
 
 mydata<-fread("data/imdb_df.tsv")
+
+#IMPORTANT!!!!!!!!
+#Before starting, the columns should be named c("id", "sentiment", "review")
+
+
 #transform to lower case and remove all punctuation
 mydata$review <- tolower (mydata$review)
 punct <- '[]\\?!\"\'#$%&(){}+*/:;,._`|~\\[<=>@\\^-]'
@@ -20,7 +25,7 @@ setDT(mydata)
 setkey(mydata, id)
 set.seed(2016L)
 all_ids <- mydata$id
-train_ids <- sample(all_ids, 20000)
+train_ids <- sample(all_ids, nrow(mydata)*0.8)
 test_ids <- setdiff(all_ids, train_ids)
 train <- mydata[J(train_ids)]
 test <- mydata[J(test_ids)]
@@ -63,7 +68,8 @@ glmnet_classifier = cv.glmnet(x = dtm_train, y = train[['sentiment']],
                               nfolds = NFOLDS,
                               thresh = 1e-3,
                               maxit = 1e3)
-print(paste("max AUC =", round(max(glmnet_classifier$cvm), 4)))
+print(paste("max AUC =", round(max(glmnet_classifier$cvm), 5)))
+plot(glmnet_classifier)
 
 
 preds <- predict(glmnet_classifier, dtm_test, type = 'response')[,1]
