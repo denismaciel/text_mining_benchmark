@@ -1,6 +1,7 @@
 # Create DATASETS ----
 #================================ Header ================================
 # 1) Kaggle competititon dataset
+library("tidyverse")
 library(RCurl)
 train_data_url <- "https://dl.dropboxusercontent.com/u/8082731/datasets/UMICH-SI650/training.txt"
 train_data_file <- getURL(train_data_url)
@@ -10,22 +11,65 @@ a <- read.csv(
   header=FALSE, 
   quote = "",
   stringsAsFactor=F,
-  col.names=c("Sentiment", "Text"))
-a$review_id <- c(1:nrow(a))
-a$rating <- a$Sentiment
-a$binary_rating <- a$Sentiment
-a$review_text <- a$Text
-a$Text <- NULL
-a$Sentiment <- NULL
+  col.names=c("rating", "review_text"))
+unique(a$review_text) %>% tbl_df()
 
-library("tidyverse")
-pos <- a[a$binary_rating == 1, ]
-pos <- pos[sample(1:nrow(pos), 2500, replace = FALSE), ]
-neg <- a[a$binary_rating == 0, ]
-neg <- neg[sample(1:nrow(neg), 2500, replace = FALSE), ]
+# x <- a %>% 
+#   group_by(review_text) %>% 
+#   summarise(n = n()) %>% 
+#   arrange(desc(n))
+x <- a %>% 
+  group_by(review_text) %>% 
+  filter(row_number() == 1)
+# View(x)
+
+x$review_id <- c(1:nrow(x))
+x <- x %>% 
+  mutate(binary_rating = rating) %>% 
+  select(review_id, 
+         rating,
+         binary_rating,
+         review_text)
+
+pos <- x[x$binary_rating == 1, ]
+pos <- pos[sample(1:nrow(pos), 625, replace = FALSE), ]
+neg <- x[x$binary_rating == 0, ]
+neg <- neg[sample(1:nrow(neg), 625, replace = FALSE), ]
 outA <- bind_rows(pos, neg)
 summary(outA)
-saveRDS(outA, "data/twitter_5K.rds")
+# saveRDS(outA, "data/twitter_12H.rds")
+
+# 1b) Sanders
+a2 <- read_csv("data/Copies for APA paper/full-corpus.csv")
+a2$rating <- a2$Sentiment
+a2[a2$rating == "positive",]$rating <- "1"
+a2[a2$rating == "negative",]$rating <- "0"
+# a2$rating <- as.numeric(a2$rating)
+a2$review_text <- a2$TweetText
+a2$review_id <- a2$TweetId
+a2$TweetText <- NULL
+a2$Sentiment <- NULL
+a2$TweetId <- NULL
+a2$Topic <- NULL
+a2$TweetDate <- NULL
+pos <- a2[a2$rating == "1", ]
+pos <- pos[sample(1:nrow(pos), 500, replace = FALSE), ]
+neg <- a2[a2$rating == "0", ]
+neg <- neg[sample(1:nrow(neg), 500, replace = FALSE), ]
+outA2 <- bind_rows(pos, neg)
+summary(outA2)
+outA2$rating <- as.numeric(outA2$rating)
+outA2$review_id <- as.numeric(outA2$review_id)
+outA2 <- outA2 %>% 
+  mutate(binary_rating = rating) %>% 
+  select(review_id, 
+         rating,
+         binary_rating,
+         review_text)
+# saveRDS(outA2, "data/twitter_10H.rds")
+
+ajoint <- bind_rows(outA,outA2)
+saveRDS(ajoint, "data/twitter_22H.rds")
 
 
 # 2) Emodji Labeled
@@ -55,11 +99,6 @@ outB200 <- bind_rows(pos, neg)
 summary(outB200)
 saveRDS(outB200, "data/twitter_200K.rds")
 
-
-# 3) Sanders
-c <- read_csv("data/Copies for APA paper/full-corpus.csv")
-c$Sentiment <- as.factor(c$Sentiment)
-# To little, only 1K observations are labeled as positive or negative.
 
 # 4) other sources sentences
 d1 <- read_delim("data/Copies for APA paper/sentiment labelled sentences/amazon_cells_labelled.txt", col_names = c("review_text","rating"), delim = "\t")
