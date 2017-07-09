@@ -9,33 +9,31 @@ if(!require("text2vec")) install.packages("text2vec"); library("text2vec")
 if(!require("readr")) install.packages("readr"); library("readr")
 if(!require("glmnet")) install.packages("glmnet"); library("glmnet")
 
-mydata<-fread("data/imdb_df.tsv")
 
-#IMPORTANT!!!!!!!!
-#Before starting, the columns should be named c("id", "sentiment", "review")
+mydata <- readRDS("data/imdb_df.Rds")
 
 
 #transform to lower case and remove all punctuation
-mydata$review <- tolower (mydata$review)
+mydata$review_text <- tolower (mydata$review_text)
 punct <- '[]\\?!\"\'#$%&(){}+*/:;,._`|~\\[<=>@\\^-]'
-mydata$review <-  gsub( punct, "", x = mydata$review)
+mydata$review_text <-  gsub( punct, "", x = mydata$review_text)
 
 #Separate data in train and test dataset----
 setDT(mydata)
-setkey(mydata, id)
+setkey(mydata, review_id)
 set.seed(2016L)
-all_ids <- mydata$id
-train_ids <- sample(all_ids, nrow(mydata)*0.8)
-test_ids <- setdiff(all_ids, train_ids)
-train <- mydata[J(train_ids)]
-test <- mydata[J(test_ids)]
+all_review_ids <- mydata$review_id
+train_review_ids <- sample(all_review_ids, nrow(mydata)*0.8)
+test_review_ids <- setdiff(all_review_ids, train_review_ids)
+train <- mydata[J(train_review_ids)]
+test <- mydata[J(test_review_ids)]
 
 #Second part (working)----
 
 tok_fun <- word_tokenizer
-it_train <- itoken(train$review, 
+it_train <- itoken(train$review_text, 
                    tokenizer = tok_fun, 
-                   ids = train$id, 
+                   ids = train$review_id, 
                    progressbar = FALSE)
 stop_words <- c("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours")
 vocab <- create_vocabulary(it_train, stopwords = stop_words, ngram = c(1L, 2L))
@@ -51,9 +49,9 @@ dtm_train <- normalize(dtm_train, "l1") #normalizes dtm_train so that every row 
 
 
 
-it_test <- test$review %>% 
+it_test <- test$review_text %>% 
   tok_fun %>% 
-  itoken(ids = test$id, 
+  itoken(ids = test$review_id, 
          progressbar = FALSE)
 
 dtm_test <- create_dtm(it_test, vectorizer)
@@ -61,7 +59,7 @@ dtm_test <- normalize(dtm_test, "l1") #normalizes dtm_test so that every row sum
 
 #Performing the training with logistic regression-----
 NFOLDS = 5
-glmnet_classifier = cv.glmnet(x = dtm_train, y = train[['sentiment']], 
+glmnet_classifier = cv.glmnet(x = dtm_train, y = train[['binary_rating']], 
                               family = 'binomial', 
                               alpha = 1,
                               type.measure = "auc",
@@ -73,4 +71,4 @@ plot(glmnet_classifier)
 
 
 preds <- predict(glmnet_classifier, dtm_test, type = 'response')[,1]
-glmnet:::auc(test$sentiment, preds)
+glmnet:::auc(test$binary_rating, preds)
