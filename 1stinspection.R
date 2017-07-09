@@ -1,24 +1,24 @@
 
 library(jsonlite)
 #1. load and process data
-reviews <- stream_in(file("./yelp_academic_dataset_review.json"),pagesize = 10000)
+#reviews <- stream_in(file("./yelp_academic_dataset_review.json"),pagesize = 10000)
 
 
 require(data.table) 
+#setDT(reviews)
+
+
+#saveRDS(reviews, file = "./all_yelp_reviews.rds", ascii = FALSE, version = NULL,
+        compress = TRUE, refhook = NULL)
+
+reviews <- readRDS("./yelp_reviews.rds", refhook = NULL)
 setDT(reviews)
 
 
-saveRDS(reviews, file = "./all_yelp_reviews.rds", ascii = FALSE, version = NULL,
-        compress = TRUE, refhook = NULL)
 
-reviews <- readRDS("./all_yelp_reviews.rds", refhook = NULL)
-
-
-
-
-sreviews <- reviews[sample(1:nrow(reviews), 100000,replace=FALSE),]
+#sreviews <- reviews[sample(1:nrow(reviews), 100000,replace=FALSE),]
 #we're only interested in restaurant reviews
-sreviews <- sreviews[grepl("restaurant|eat|food|sushi|pasta|burger", sreviews$text),]
+#sreviews <- sreviews[grepl("restaurant|eat|food|sushi|pasta|burger", sreviews$text),]
 
 library(SciencesPo)
 library(lsa)
@@ -26,30 +26,30 @@ if(!require("foreach")) install.packages("foreach"); library("foreach")
 if(!require("doParallel")) install.packages("doParallel"); library("doParallel")
 
 
-sreviews$n_rating <- Normalize(sreviews$stars, range=c(0,1))
+#sreviews$n_rating <- Normalize(sreviews$stars, range=c(0,1))
 
 #good reviews: stars>3, bad : stars<3
-good_sreviews <- sreviews[sreviews$stars>3,]
-bad_sreviews <- sreviews[sreviews$stars<3,]
-good_sreviews$is_good <- 1
-bad_sreviews$is_good <- 0
-sreviews <- rbind(good_sreviews, bad_sreviews)
+#good_sreviews <- sreviews[sreviews$stars>3,]
+#bad_sreviews <- sreviews[sreviews$stars<3,]
+#good_sreviews$is_good <- 1
+#bad_sreviews$is_good <- 0
+#sreviews <- rbind(good_sreviews, bad_sreviews)
 
 #shuffle rows
-sreviews <- sreviews[sample(nrow(sreviews)),]
+#sreviews <- sreviews[sample(nrow(sreviews)),]
 
 #make subset for testing, add line_ID
-sreviews$line_ID <- 1:nrow(sreviews)
+#sreviews$line_ID <- 1:nrow(sreviews)
 # split known / class 70/30
-a <- round((max(sreviews$line_ID)*70)/100)
-b <- round(max(sreviews$line_ID))
-known <- sreviews[1:a,]
-class <- sreviews[round(max(known$line_ID)+1):max(sreviews$line_ID),]
+#a <- round((max(sreviews$line_ID)*70)/100)
+#b <- round(max(sreviews$line_ID))
+#known <- sreviews[1:a,]
+#class <- sreviews[round(max(known$line_ID)+1):max(sreviews$line_ID),]
 
-class$stars <- NULL
-class$n_rating <- NULL
-class$is_good <- NULL
-known_f_matr <- known[,c("line_ID", "text","is_good")]
+#class$stars <- NULL
+#class$n_rating <- NULL
+#class$is_good <- NULL
+#known_f_matr <- known[,c("line_ID", "text","is_good")]
 #2. create matrices for lsa
 
 known_f_matr_g <- known_f_matr[known_f_matr$is_good==1,]
@@ -87,7 +87,7 @@ myNewMatrix_2 = myNewMatrix
 
 #3.same as 2 with small reviews only(nchar<140 characters)
 
-known_f_matr_s <- known_f_matr[nchar(known_f_matr$text, type = "chars", allowNA = FALSE, keepNA = NA)<145,]
+known_f_matr_s <- reviews[nchar(reviews$review_text, type = "chars", allowNA = FALSE, keepNA = NA)<145,]
 #for now, we use only 200 reviews
 known_f_matr_s <- known_f_matr_s[sample(1:nrow(known_f_matr_s), 200,replace=FALSE),]
 
@@ -119,7 +119,7 @@ memory.limit(size=30000)
 #3.2 build textmatrix from tempfile
 myMatrix = textmatrix(td,stopwords=stopwords_en,stemming=FALSE,language="english", minWordLength=1)
 myLSAspace = lsa(myMatrix, dims=dimcalc_share(share=0.5))
-myLSAspace_2dim = lsa(myMatrix, dims=2)
+myLSAspace_2dim = lsa(myMatrix, dims=5)
 myNewMatrix = as.textmatrix(myLSAspace)
 myNewMatrix_2dim = as.textmatrix(myLSAspace)
 #locations <-myLSAspace$dk %*% diag(myLSAspace$sk)
@@ -130,6 +130,8 @@ myNewMatrix_2dim = as.textmatrix(myLSAspace)
 locations_docs <-myLSAspace_2dim$dk %*% diag(myLSAspace_2dim$sk)
 plot(locations_docs,type="n",xlim=c(-1,2),ylim=c(-1,2))
 text(locations_docs, labels=rownames(myLSAspace_2dim$dk))
+
+# this is where the messy area starts
 locations_df <- data.frame(locations_docs)
 
 
@@ -167,5 +169,32 @@ insp_mat <- data.frame(myMatrix)
 subset(reviews, reviews$text %in% c("restaurant"))
 rm(td)
   
+toupload <- sreviews[sample(1:nrow(sreviews), 50000,replace=FALSE),]
+toupload$text = prep_fun(toupload$text)
 
-substr(sreviews$text, first, last)
+useful funny cool   type n_rating is_good line_ID
+
+review_id || rating || binary_rating || review_text
+
+toupload$user_id <- NULL
+toupload$date <- NULL
+toupload$date <- NULL
+toupload$useful <- NULL
+toupload$funny <- NULL
+toupload$cool <- NULL
+toupload$business_id <-NULL
+toupload$type <-NULL
+toupload$n_rating <-
+  toupload$rating <- toupload$stars
+toupload$stars <- NULL
+toupload$binary_rating <- toupload$is_good
+toupload$is_good <- NULL
+toupload$line_ID <- NULL
+toupload$review_text <- toupload$text
+toupload$text <- NULL
+setcolorder(toupload, c("review_id", "rating", "binary_rating","review_text"))
+
+
+saveRDS(toupload, file = "./yelp_reviews.rds", ascii = FALSE, version = NULL,
+        compress = TRUE, refhook = NULL)
+reviews <- toupload
