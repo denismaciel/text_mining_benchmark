@@ -14,7 +14,9 @@ if(!require("tm")) install.packages("tm"); library(tm)
 # DOWNLOAD DATA
 # mydata <-readRDS("data/AmazonBooks.RDS")
 # mydata <-readRDS("data/twitter_50K.rds")
-mydata <-readRDS("data/yelp_reviews.rds")
+# mydata <-readRDS("data/yelp_reviews.rds")
+mydata <-readRDS("data/imdb_df.Rds")
+
 
 
 # Reduce the size to just 4000 reviews
@@ -154,7 +156,8 @@ features <- features[rowTotals > 0, ] #Need when some lines were deleted in the 
 final <- cbind(features,ldafeatures_final)
 # saveRDS(final, "data/LDA_features_AmazonBooks.rds")
 # saveRDS(final, "data/LDA_features_twitter_50K.rds")
-saveRDS(final, "data/LDA_features_yelp.rds")
+# saveRDS(final, "data/LDA_features_yelp.rds")
+saveRDS(final, "data/LDA_features_imdb.rds")
 
 # #### Topic models ----
 # library(ldatuning)
