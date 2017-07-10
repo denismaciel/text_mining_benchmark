@@ -12,8 +12,9 @@ if(!require("tm")) install.packages("tm"); library(tm)
 
 
 # DOWNLOAD DATA
-mydata <-readRDS("data/AmazonBooks.RDS")
-# !!! For other files before starting check that,
+# mydata <-readRDS("data/AmazonBooks.RDS")
+mydata <-readRDS("data/twitter_50K.rds")
+
 
 # Reduce the size to just 4000 reviews
 # mydata <- mydata[1:4000,]
@@ -149,7 +150,8 @@ features <- mydata[,c("review_id","rating","binary_rating")]
 # rowTotals[rowTotals==0]
 # features <- features[rowTotals > 0, ] #Need when some lines were deleted in the process
 final <- cbind(features,ldafeatures_final)
-saveRDS(final, "data/LDA_features_AmazonBooks.rds")
+# saveRDS(final, "data/LDA_features_AmazonBooks.rds")
+saveRDS(final, "data/LDA_features_twitter_50K.rds")
 
 # #### Topic models ----
 # library(ldatuning)
