@@ -1,22 +1,24 @@
 
 library(jsonlite)
 #1. load and process data
-#reviews <- stream_in(file("./yelp_academic_dataset_review.json"),pagesize = 10000)
-
+#all_reviews <- stream_in(file("./yelp_academic_dataset_review.json"),pagesize = 10000)
+#setDT(all_reviews)
 
 require(data.table) 
-#setDT(reviews)
 
+#setDT(all_reviews)
 
 #saveRDS(reviews, file = "./all_yelp_reviews.rds", ascii = FALSE, version = NULL,
-        compress = TRUE, refhook = NULL)
+       # compress = TRUE, refhook = NULL)
 
-reviews <- readRDS("./yelp_reviews.rds", refhook = NULL)
-setDT(reviews)
-
-
-
-#sreviews <- reviews[sample(1:nrow(reviews), 100000,replace=FALSE),]
+reviews <- readRDS("./data/yelp_reviews.rds", refhook = NULL)
+#setDT(reviews)
+all_reviews[stars >3,][sample(1:nrow(all_reviews[stars >3,]), 25000,replace=FALSE),]
+goods <- all_reviews[all_reviews$stars >3,][sample(1:nrow(all_reviews[all_reviews$stars >3,]), 25000,replace=FALSE),]
+bads <- all_reviews[all_reviews$stars <3,][sample(1:nrow(all_reviews[all_reviews$stars <3,]), 25000,replace=FALSE),]
+sreviews <- rbind(goods, bads)
+sreviews$is_good <- 1 
+sreviews[sreviews$stars < 3,]$is_good <- 0
 #we're only interested in restaurant reviews
 #sreviews <- sreviews[grepl("restaurant|eat|food|sushi|pasta|burger", sreviews$text),]
 
@@ -26,14 +28,7 @@ if(!require("foreach")) install.packages("foreach"); library("foreach")
 if(!require("doParallel")) install.packages("doParallel"); library("doParallel")
 
 
-#sreviews$n_rating <- Normalize(sreviews$stars, range=c(0,1))
 
-#good reviews: stars>3, bad : stars<3
-#good_sreviews <- sreviews[sreviews$stars>3,]
-#bad_sreviews <- sreviews[sreviews$stars<3,]
-#good_sreviews$is_good <- 1
-#bad_sreviews$is_good <- 0
-#sreviews <- rbind(good_sreviews, bad_sreviews)
 
 #shuffle rows
 #sreviews <- sreviews[sample(nrow(sreviews)),]
@@ -169,32 +164,39 @@ insp_mat <- data.frame(myMatrix)
 subset(reviews, reviews$text %in% c("restaurant"))
 rm(td)
   
-toupload <- sreviews[sample(1:nrow(sreviews), 50000,replace=FALSE),]
-toupload$text = prep_fun(toupload$text)
-
-useful funny cool   type n_rating is_good line_ID
-
-review_id || rating || binary_rating || review_text
-
-toupload$user_id <- NULL
-toupload$date <- NULL
-toupload$date <- NULL
-toupload$useful <- NULL
-toupload$funny <- NULL
-toupload$cool <- NULL
-toupload$business_id <-NULL
-toupload$type <-NULL
-toupload$n_rating <-
-  toupload$rating <- toupload$stars
-toupload$stars <- NULL
-toupload$binary_rating <- toupload$is_good
-toupload$is_good <- NULL
-toupload$line_ID <- NULL
-toupload$review_text <- toupload$text
-toupload$text <- NULL
-setcolorder(toupload, c("review_id", "rating", "binary_rating","review_text"))
 
 
-saveRDS(toupload, file = "./yelp_reviews.rds", ascii = FALSE, version = NULL,
+
+
+sreviews$user_id <- NULL
+sreviews$date <- NULL
+sreviews$date <- NULL
+sreviews$useful <- NULL
+sreviews$funny <- NULL
+sreviews$cool <- NULL
+sreviews$business_id <-NULL
+sreviews$type <-NULL
+sreviews$n_rating <-NULL
+  sreviews$rating <- sreviews$stars
+sreviews$stars <- NULL
+sreviews$binary_rating <- sreviews$is_good
+sreviews$is_good <- NULL
+sreviews$line_ID <- NULL
+sreviews$review_text <- sreviews$text
+sreviews$text <- NULL
+setcolorder(sreviews, c("review_id", "rating", "binary_rating","review_text"))
+library(stringr)
+prep_fun = function(x) {
+  x %>% 
+    # make text lower case
+    str_to_lower %>% 
+    # remove non-alphanumeric symbols
+    str_replace_all("[^[:alnum:]]", " ") %>% 
+    # collapse multiple spaces
+    str_replace_all("\\s+", " ")
+}
+sreviews$review_text <- prep_fun(sreviews$review_text)
+
+saveRDS(sreviews, file = "./data/yelp_reviews.rds", ascii = FALSE, version = NULL,
         compress = TRUE, refhook = NULL)
-reviews <- toupload
+

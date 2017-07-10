@@ -34,7 +34,7 @@ dtm_tfidf_lsa = dtm %>%
   fit_transform(lsa)
 
 dtm_tfidf_lsa_df <- data.frame(dtm_tfidf_lsa)
-
+dtm_tfidf_lsa
 #never mind 
 plot(dtm_tfidf_lsa)
 boo <- data.table(dtm_tfidf_lsa)
