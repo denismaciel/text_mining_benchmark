@@ -12,22 +12,22 @@ if(!require("tm")) install.packages("tm"); library(tm)
 
 
 # DOWNLOAD DATA
-mydata <-fread("data/imdb_df.tsv")
+mydata <-readRDS("data/AmazonBooks.RDS")
 # !!! For other files before starting check that,
-# the columns should be named c("id", "sentiment", "review")
+
 # Reduce the size to just 4000 reviews
-mydata <- mydata[1:4000,]
+# mydata <- mydata[1:4000,]
 
 
 # CLEANING PROCEDURES FROM DJORDJE
 # #transform to lower case and remove all punctuation
-# mydata$review <- tolower (mydata$review)
+# mydata$review_text <- tolower (mydata$review_text)
 # punct <- '[]\\?!\"\'#$%&(){}+*/:;,._`|~\\[<=>@\\^-]'
-# mydata$review <-  gsub( punct, "", x = mydata$review)
+# mydata$review_text <-  gsub( punct, "", x = mydata$review_text)
 
 
 # CREATE CORPUS
-reviews_source <- VectorSource(mydata$review)
+reviews_source <- VectorSource(mydata$review_text)
 corpus <- VCorpus(reviews_source)
 
 
@@ -63,7 +63,7 @@ dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(5, Inf
 # # and have a look at the most frequent terms
 # head(sort(colSums(as.matrix(dtm)), decreasing = TRUE), 20)
 # We save this term document matrix and will use it later on
-saveRDS(dtm, "data/imdb_dtm.rds")
+# saveRDS(dtm, "data/AmazonBooks_dtm.rds")
 
 
 ### Maybe execive ----
@@ -122,17 +122,17 @@ saveRDS(dtm, "data/imdb_dtm.rds")
 
 
 ### LAD itself ----
-# We will work with the term-document matrix that we have
-# created for the 4000 IMDB reviews
-reviews <- readRDS("./data/imdb_dtm.rds")
+# We will work with the term-document matrix that we have created for the reviews
+# reviews <- readRDS("./data/AmazonBooks_dtm.rds")
+reviews <- dtm
 
 # Have a quick look at reviews to see if everything worked
 inspect(reviews[1:5, 1:10])
 
 # Number of empty documents in the matrix
 rowTotals <- apply(reviews, 1, sum) #Find the sum of words in each Document
-# sum(rowTotals == 0) # There is one review in the corpus that doesn't contain any freq. term
-# reviews   <- reviews[rowTotals > 0, ]  
+sum(rowTotals == 0) # There is one review in the corpus that doesn't contain any freq. term
+reviews <- reviews[rowTotals > 0, ]  
 
 library(topicmodels)
 # fitting the model
@@ -143,17 +143,24 @@ fit <- LDA(reviews, k, method = "Gibbs", control = list(seed = 123, verbose = 25
 terms(fit, 10)
 topics(fit)[1:10]
 ldaOut.topics <- as.matrix(topics(fit))
+ldafeatures <- posterior(fit)
+ldafeatures_final <- ldafeatures$topics
+features <- mydata[,c("review_id","rating","binary_rating")]
+# rowTotals[rowTotals==0]
+# features <- features[rowTotals > 0, ] #Need when some lines were deleted in the process
+final <- cbind(features,ldafeatures_final)
+saveRDS(final, "data/LDA_features_AmazonBooks.rds")
 
-#### Topic models ----
-library(ldatuning)
-# ldatuning to find optimal topics number
-kTuning <- FindTopicsNumber(
-  reviews,
-  topics = seq(from = 16, to = 24, by = 4),
-  metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
-  method = "Gibbs",
-  control = list(seed = 123),
-  mc.cores = 3L,
-  verbose = TRUE
-)
-FindTopicsNumber_plot(kTuning)
+# #### Topic models ----
+# library(ldatuning)
+# # ldatuning to find optimal topics number
+# kTuning <- FindTopicsNumber(
+#   reviews,
+#   topics = seq(from = 16, to = 24, by = 4),
+#   metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
+#   method = "Gibbs",
+#   control = list(seed = 123),
+#   mc.cores = 3L,
+#   verbose = TRUE
+# )
+# FindTopicsNumber_plot(kTuning)
