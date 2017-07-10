@@ -13,7 +13,8 @@ if(!require("tm")) install.packages("tm"); library(tm)
 
 # DOWNLOAD DATA
 # mydata <-readRDS("data/AmazonBooks.RDS")
-mydata <-readRDS("data/twitter_50K.rds")
+# mydata <-readRDS("data/twitter_50K.rds")
+mydata <-readRDS("data/yelp_reviews.rds")
 
 
 # Reduce the size to just 4000 reviews
@@ -146,12 +147,14 @@ topics(fit)[1:10]
 ldaOut.topics <- as.matrix(topics(fit))
 ldafeatures <- posterior(fit)
 ldafeatures_final <- ldafeatures$topics
+# mydata <- as.data.frame(mydata)
 features <- mydata[,c("review_id","rating","binary_rating")]
-# rowTotals[rowTotals==0]
-# features <- features[rowTotals > 0, ] #Need when some lines were deleted in the process
+rowTotals[rowTotals==0]
+features <- features[rowTotals > 0, ] #Need when some lines were deleted in the process
 final <- cbind(features,ldafeatures_final)
 # saveRDS(final, "data/LDA_features_AmazonBooks.rds")
-saveRDS(final, "data/LDA_features_twitter_50K.rds")
+# saveRDS(final, "data/LDA_features_twitter_50K.rds")
+saveRDS(final, "data/LDA_features_yelp.rds")
 
 # #### Topic models ----
 # library(ldatuning)
