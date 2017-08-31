@@ -1,0 +1,33 @@
+import fasttext
+import pandas as pd
+import re
+
+df = pd.read_csv('text_mining_benchmark/data/AmazonBooks_sample.csv')
+
+
+classifier = fasttext.supervised('fasttext/train.file', 'model_py')
+
+result = classifier.test('fasttext/test.file')
+
+result.precision
+result.recall
+result.nexamples
+
+with open('fasttext/test.file') as f:
+    text = f.readlines()
+
+#text = df.iloc[:, 2]
+
+# predict the variables
+labels = classifier.predict(text)
+
+flat_list = []
+for sublist in labels:
+    for item in sublist:
+        flat_list.append(float(item))
+
+comparison = pd.DataFrame({'predicted': flat_list,
+                    'actual': df.iloc[9000:10000, 1].tolist()})
+
+pd.crosstab(comparison['actual'],comparison['predicted'])
+

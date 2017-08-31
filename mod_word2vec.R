@@ -6,12 +6,12 @@ library(broom)
 
 source('~/Google Drive/Finance/R Projects/helper_functions.R')
 #================================ Header ================================
-#============================= Extra Packages ===================================
-if(!require("rword2vec")) install.packages("rword2vec"); library("rword2vec")
-if(!require("text2vec")) install.packages("text2vec"); library("text2vec")
-if(!require("glmnet")) install.packages("glmnet"); library("glmnet")
-
-df <- readRDS("data/AmazonBooks.RDS") %>% tbl_df()
+#============================= Extra Packages ===========================
+library(rword2vec)
+library(text2vec)
+library(glmnet)
+library(xgboost)
+df <- readRDS("data/imdb_df.Rds") %>% tbl_df()
 
 # transform to lower case and remove all punctuation
 df$review_word2vec <- df$review_text %>% 
@@ -65,12 +65,16 @@ mod_glmnet  <-  cv.glmnet(x = dtm_train,
                           thresh = 1e-3,
                           maxit = 1e3)
 
-print(paste("max AUC =", round(max(mod_glmnet$cvm), 5)))
-plot(mod_glmnet)
+# print(paste("max AUC =", round(max(mod_glmnet$cvm), 5)))
+# plot(mod_glmnet)
+
+# model
+mod_xgboost <- xgboost(data = dtm_train,
+                       label = train[['binary_rating']],
+                       nrounds = 100,
+                       objective = "binary:logistic")
 
 # ============================= TEST THE MODEL ===================================
-pred_test <- data_frame(pred = predict(mod_glmnet, dtm_test, type = 'response')[, 1],
-                        actual = test$binary_rating) %>% 
-  mutate(id = row_number())
-
-
+pred_test <- data_frame(pred_glmnet = predict(mod_glmnet, dtm_test, type = 'response')[, 1],
+                        pred_xgboost = predict(mod_xgboost, dtm_test, type = 'response'),
+                        actual = test$binary_rating)
