@@ -8,6 +8,7 @@ if(!require("SciencesPo")) install.packages("SciencesPo"); library("SciencesPo")
 if(!require("caret")) install.packages("caret"); library("caret")
 if(!require("data.table")) install.packages("data.table"); library("data.table")
 if(!require("ROCR")) install.packages("ROCR"); library("ROCR")
+if(!require("pROC")) install.packages("pROC"); library("pROC")
 
 #feature creation with small reviews only(nchar<140 characters)
 known_f_matr_s <- reviews[nchar(reviews$review_text, type = "chars", allowNA = FALSE, keepNA = NA)<145,]
@@ -56,3 +57,6 @@ result <-merge(known_f_matr_s,prediction_table, by="ID")
 pred <- prediction(round(result$prediction, digits = 0),result$binary_rating)
 perf <- performance(pred,"tpr","fpr")
 plot(perf,colorize=TRUE)
+
+roc_obj <- roc(result$binary_rating,round(result$prediction, digits = 0))
+auc(roc_obj)
