@@ -72,3 +72,37 @@ plot(glmnet_classifier)
 
 preds <- predict(glmnet_classifier, dtm_test, type = 'response')[,1]
 glmnet:::auc(test$binary_rating, preds)
+
+
+# Tf-IDF transformation based word2vec----
+vocab <-  create_vocabulary(it_train)
+vectorizer <- vocab_vectorizer(vocab)
+dtm_train <- create_dtm(it_train, vectorizer)
+
+tfidf <- TfIdf$new()
+
+dtm_train_tfidf <- fit_transform(dtm_train, tfidf)
+
+
+dtm_test_tfidf <- create_dtm(it_test, vectorizer) %>% 
+  transform(tfidf)
+
+t1 <- Sys.time()
+glmnet_classifier <- cv.glmnet(x = dtm_train_tfidf, y = train[['binary_rating']], 
+                              family = 'binomial', 
+                              alpha = 1,
+                              type.measure = "auc",
+                              nfolds = NFOLDS,
+                              thresh = 1e-3,
+                              maxit = 1e3)
+print(difftime(Sys.time(), t1, units = 'sec'))
+
+plot(glmnet_classifier)
+print(paste("max AUC =", round(max(glmnet_classifier$cvm), 4)))
+preds <- predict(glmnet_classifier, dtm_test_tfidf, type = 'response')[,1]
+glmnet:::auc(test$binary_rating, preds)
+
+
+
+
+
