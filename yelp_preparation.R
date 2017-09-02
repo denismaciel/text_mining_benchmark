@@ -1,6 +1,7 @@
 library(jsonlite)
 library(data.table)
 library(tidyverse)
+memory.limit(size=30000)
 #1. load and process data
 all_reviews <- stream_in(file("./yelp_academic_dataset_review.json"),pagesize = 10000)
 setDT(all_reviews)
@@ -14,7 +15,7 @@ sreviews$is_good <- 1
 sreviews[sreviews$stars < 3,]$is_good <- 0
 
 
-
+#delete unwanted columns and add remove a non alphanumeric characters
 sreviews$user_id <- NULL
 sreviews$date <- NULL
 sreviews$date <- NULL
@@ -43,3 +44,11 @@ prep_fun = function(x) {
     str_replace_all("\\s+", " ")
 }
 sreviews$review_text <- prep_fun(sreviews$review_text)
+
+saveRDS(sreviews, file = "./data/yelp_reviews.rds", ascii = FALSE, version = NULL,
+        compress = TRUE, refhook = NULL)
+
+
+
+
+
