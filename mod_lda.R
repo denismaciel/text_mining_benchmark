@@ -1,23 +1,27 @@
+# ============================= Header ===================================
+# General Purpose Packages
 library(data.table)
 library(tidyverse)
 library(stringr)
-library(readxl)
-library(broom)
-              
-source('~/Google Drive/Finance/R Projects/helper_functions.R')
-#================================ Header ================================
+# Packages to prepare the data
 library(Matrix)
+# Packages to train the model
 library(xgboost)
 library(glmnet)
 
-df <- readRDS("data/LDA_features_twitter_50K.rds") %>% tbl_df()
-feat <- df %>% select(-review_id, -rating) 
-colnames(feat)[-1] <- paste0("feat", colnames(feat)[-1])
+# ============================= Prepare the Data ===================================
+df <- as_tibble(readRDS("data/LDA_features_twitter_50K.rds"))
+
 label <- select(df, binary_rating)
+
+feat <- select(df, -review_id, -rating) 
+colnames(feat)[-1] <- paste0("feat", colnames(feat)[-1])
+
+# Make features a sparse matrix for the models
 feat_sparse <- Matrix::sparse.model.matrix(data = feat,
                                            object = binary_rating ~ .-1)
 
-# Create train and test
+# ============================= Split Train and Test Sets ===================================
 ind <- sample(1:nrow(label), round(nrow(label)*0.80), replace = FALSE)
 
 train_feat <- feat_sparse[ind, ]
@@ -26,8 +30,7 @@ train_label <- label[ind, ]
 test_feat <- feat_sparse[-ind, ]
 test_label <- label[-ind, ]
 
-
-# model
+# ============================= Train the Model ===================================
 mod_glmnet  <-  cv.glmnet(x = train_feat,
                           y = train_label$binary_rating, 
                           family = 'binomial', 
@@ -42,7 +45,7 @@ mod_xgboost <- xgboost(data = train_feat,
                        nrounds = 100,
                        objective = "binary:logistic")
 
-# ============================= TEST THE MODEL ===================================
+# ============================= Predict on Test Set ===================================
 pred_test <- data_frame(pred_glmnet = predict(mod_glmnet, test_feat, type = 'response')[, 1],
                         pred_xgboost = predict(mod_xgboost, test_feat, type = 'response'),
                         actual = test_label$binary_rating)
