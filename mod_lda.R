@@ -28,7 +28,6 @@ test_label <- label[-ind, ]
 
 
 # model
-
 mod_glmnet  <-  cv.glmnet(x = train_feat,
                           y = train_label$binary_rating, 
                           family = 'binomial', 
@@ -47,6 +46,3 @@ mod_xgboost <- xgboost(data = train_feat,
 pred_test <- data_frame(pred_glmnet = predict(mod_glmnet, test_feat, type = 'response')[, 1],
                         pred_xgboost = predict(mod_xgboost, test_feat, type = 'response'),
                         actual = test_label$binary_rating)
-
-
-View(pred_test)
