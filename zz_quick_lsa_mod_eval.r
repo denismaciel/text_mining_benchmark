@@ -11,12 +11,13 @@ if(!require("ROCR")) install.packages("ROCR"); library("ROCR")
 if(!require("pROC")) install.packages("pROC"); library("pROC")
 
 #feature creation with small reviews only(nchar<140 characters)
-known_f_matr_s <- reviews[nchar(reviews$review_text, type = "chars", allowNA = FALSE, keepNA = NA)<145,]
+#known_f_matr_s <- reviews[nchar(reviews$review_text, type = "chars", allowNA = FALSE, keepNA = NA)<145,]
 #for now, we use only 1000 reviews
-known_f_matr_s <- reviews[sample(1:nrow(reviews), 1000,replace=FALSE),]
+known_f_matr_s <- reviews#[sample(1:nrow(reviews), 1000,replace=FALSE),]
 #create corpus
 corpus <- Corpus(VectorSource(known_f_matr_s$review_text))
-
+#remove stopwords
+corpus <- tm_map(corpus, removeWords, stopwords("english"))
 #create TermDocumentMatrix
 myMatrix = TermDocumentMatrix(corpus)
 myMatrix = removeSparseTerms(myMatrix,0.98)
@@ -59,4 +60,7 @@ perf <- performance(pred,"tpr","fpr")
 plot(perf,colorize=TRUE)
 
 roc_obj <- roc(result$binary_rating,round(result$prediction, digits = 0))
+detach(package:glmnet)
 auc(roc_obj)
+
+nrow(result[result$binary_rating==round(result$prediction, digits = 0),])
