@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .Rproj.user
 .Rhistory
 .RData
@@ -5,3 +6,7 @@
 text8
 model
 viz/
+=======
+model
+viz/
+>>>>>>> bb381d61b78c39803636541d569d6f9e3ae1f63d

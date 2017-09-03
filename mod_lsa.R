@@ -10,19 +10,21 @@ library(xgboost)
 library(glmnet)
 
 # ============================= Prepare the Data ===================================
-df <- as_tibble(readRDS("data/LDA_features_twitter_50K.rds"))
+df <- as_tibble(readRDS("data/LSA_features_yelp.rds"))
 
 label <- select(df, binary_rating)
 
-feat <- select(df, -review_id, -rating) 
-colnames(feat)[-1] <- paste0("feat", colnames(feat)[-1])
+feat <- df 
+
 
 # Make features a sparse matrix for the models
 feat_sparse <- Matrix::sparse.model.matrix(data = feat,
                                            object = binary_rating ~ .-1)
 
 # ============================= Split Train and Test Sets ===================================
-ind <- sample(1:nrow(label), round(nrow(label)*0.80), replace = FALSE)
+ind <- sample(1:NROW(label), round(NROW(label)*0.80), replace = FALSE)
+
+
 
 train_feat <- feat_sparse[ind, ]
 train_label <- label[ind, ]
