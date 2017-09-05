@@ -92,6 +92,15 @@ summary(outB)
 saveRDS(outB, "data/twitter_50K.rds")
 
 pos <- b[b$binary_rating == 1, ]
+pos <- pos[sample(1:nrow(pos), 52500, replace = FALSE), ]
+neg <- b[b$binary_rating == 0, ]
+neg <- neg[sample(1:nrow(neg), 52500, replace = FALSE), ]
+outB <- bind_rows(pos, neg)
+summary(outB)
+saveRDS(outB, "data_new/twitter_105K.rds")
+
+
+pos <- b[b$binary_rating == 1, ]
 pos <- pos[sample(1:nrow(pos), 100000, replace = FALSE), ]
 neg <- b[b$binary_rating == 0, ]
 neg <- neg[sample(1:nrow(neg), 100000, replace = FALSE), ]
