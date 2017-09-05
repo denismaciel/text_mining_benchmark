@@ -6,14 +6,6 @@ model=word2vec(train_file = "text_data.txt",output_file ="model1.bin",layer1_siz
 bin_to_txt("model1.bin","model1text.txt") 
 
 
-ana1=word_analogy("model1.bin","man woman king")
-ana2=word_analogy("model1.bin","paris france berlin")
-
-dist1=distance("model1.bin","man",num = 10)
-dist2=distance("model1.bin","queen",num = 10)
-dist3=distance("model1.bin","awful",num = 10)
-
-
 library(Rcpp)
 library(RcppArmadillo)
 library(tm)
@@ -25,12 +17,13 @@ library(rword2vec)
 
 sourceCpp("converter.cpp")
 vocab=as.data.frame(read.table("model1text.txt",header = F,stringsAsFactors = F,skip=1))
+
+
 colnames(vocab)[1]="word"
-print(str(vocab))
 
 num_clusters=floor(nrow(vocab)/10)
 
-vocab <- vocab[-8357,]
+vocab <- vocab[-8356,]
 
 kmean_model= kmeans(vocab[,2:ncol(vocab)], centers = num_clusters, iter.max = 150)
 write.csv(kmean_model$cluster, file="kmeans_clusters2.csv")
@@ -72,6 +65,14 @@ test_data=read.csv("test_bag_of_centroids.csv")
 
 
 
+
+feat <- training_data %>% rename(binary_rating = rating) 
+# colnames(training_data)
+# Make features a sparse matrix for the models
+feat_sparse <- Matrix::sparse.model.matrix(data = feat,
+                                           object = binary_rating ~ .-1)
+
+
 mod_glmnet  <-  cv.glmnet(x = training_data[,1:835],
                           y = training_data$rating, 
                           family = 'binomial', 
@@ -82,8 +83,8 @@ mod_glmnet  <-  cv.glmnet(x = training_data[,1:835],
                           maxit = 1e3)
 
 # model
-mod_xgboost <- xgboost(data = training_data[,1:835],
-                       label = training_data$rating,
+mod_xgboost <- xgboost(data = feat_sparse,
+                       label = feat$binary_rating,
                        nrounds = 100,
                        objective = "binary:logistic")
 
