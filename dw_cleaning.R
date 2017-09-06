@@ -2,6 +2,9 @@ library(tidyverse)
 library(stringr)
 library(tidytext)
 library(tm)
+if(!require("SnowballC")) install.packages("SnowballC"); library("SnowballC")
+
+# to_be_cleaned <- readRDS("data_new/imdb_train.RDS")
 
 df_long <- to_be_cleaned %>% 
   mutate(review_text = str_replace_all(review_text, "\\.", "\\. ")) %>% 
@@ -12,7 +15,7 @@ df_long <- to_be_cleaned %>%
   ungroup() %>% 
   anti_join(stop_words) %>% 
   arrange(review_id, word_order) %>% 
-  mutate(word_stem = stemDocument(word, language = "english"))
+  mutate(word_stem = SnowballC::wordStem(word, language = "english"))
 
 cleaned_out <- df_long %>% 
   group_by(review_id, binary_rating, rating) %>% 
