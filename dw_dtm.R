@@ -1,6 +1,6 @@
 # CREATE CORPUS
-reviews_source <- VectorSource(cleaned_out$review_text)
-rm(cleaned_out)
+reviews_source <- VectorSource(sampled_out$review_text)
+rm(sampled_out)
 corpus <- VCorpus(reviews_source)
 rm(reviews_source)
 
@@ -13,7 +13,7 @@ NgramTokenizer <-  function(x){
 }
 
 # CREATE DTM and REDUCE SPARCIRY
-# When creating DTM exclude tokens that occur in less than 5 reviews
+# When creating DTM exclude tokens that occur in less than 10 reviews
 dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
                                                  tokenize = NgramTokenizer))
 rm(NgramTokenizer)
