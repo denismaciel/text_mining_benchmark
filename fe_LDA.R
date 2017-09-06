@@ -1,44 +1,76 @@
 
 ### PREPARATION ----
 # DOWNLOAD PACKAGES
-# if(!require("githubinstall")) install.packages("githubinstall"); library("githubinstall")
 if(!require("data.table")) install.packages("data.table"); library("data.table")
-# if(!require("devtools")) install.packages("devtools"); library("devtools")
-# if(!require("rword2vec")) install.packages("rword2vec"); library("rword2vec")
-# if(!require("text2vec")) install.packages("text2vec"); library("text2vec")
-# if(!require("readr")) install.packages("readr"); library("readr")
-# if(!require("glmnet")) install.packages("glmnet"); library("glmnet")
 if(!require("tm")) install.packages("tm"); library(tm)
+if(!require("tidytext")) install.packages("tidytext"); library(tidytext)
 
-# DOWNLOAD DATA
-# mydata <-readRDS("data/AmazonBooks.RDS")
-# mydata <-readRDS("data/twitter_50K.rds")
-# mydata <-readRDS("data/yelp_reviews.rds")
-mydata <-readRDS("data/imdb_df.Rds")
+# DOWNLOAD DATA ----
+# NB!!! Select the dataset you need
+# to_be_cleaned <-readRDS("data_new/amazonBooks_test.rds")
+# to_be_cleaned <-readRDS("data_new/amazonfinefood_test.rds")
+# to_be_cleaned <-readRDS("data_new/imdb_test.RDS")
+# to_be_cleaned <-readRDS("data_new/twitter_test.RDS")
+# 
+to_be_cleaned <-readRDS("data_new/amazonBooks_train.RDS")
+# to_be_cleaned <-readRDS("data_new/amazonfinefood_train.rds")
+# to_be_cleaned <-readRDS("data_new/imdb_train.RDS")
+# to_be_cleaned <-readRDS("data_new/twitter_train.RDS")
 
-# CREATE CORPUS
+# CLEAN DATA ----
+source("dw_cleaning.R")
+rm(to_be_cleaned)
+
+# CREATE DTM ---
+source("dw_dtm.R")
+
+
+
+
+# # str_count(cleaned_dtm$word, " ") %>% table()
+# # 
+# # trigramVec <- cleaned_out %>% 
+# #   unnest_tokens(word, review_text, token = "ngrams", n=3)
+# # 
+# # bigramVec <- cleaned_out %>% 
+# #   unnest_tokens(word, review_text, token = "ngrams", n=2)
+# # 
+# # wordVec <- cleaned_dtm <- cleaned_out %>% 
+# #   unnest_tokens(word, review_text, token = "words")
+# # 
+# # a <- bind_rows(trigramVec,bigramVec,wordVec)
+# # 
+# # dtm <- a %>% 
+# #   count(review_id, word, sort = TRUE) %>% 
+# #   cast_dtm(review_id, word, n)
+# 
+# 
+# 
+# # CREATE CORPUS
+# reviews_source <- VectorSource(mydata$review_text)
+# corpus <- VCorpus(reviews_source)
+# 
+# # CLEAN CORPUS
+# # Transform all letters to lower-case
+# corpus <- tm_map(corpus, content_transformer(tolower))
+# # Remove all punctuation characters
+# replaceCharacter <- content_transformer(function(x, pattern, replacement)
+#   gsub(pattern = pattern,replacement = replacement, x))
+# # Address words with "-" and "´"
+# corpus <- tm_map(corpus, replaceCharacter, "-", " ")
+# corpus <- tm_map(corpus, replaceCharacter, "[[:punct:]]", "")
+# # Reduce all whitespace to one and delete line breaks, etc.
+# corpus <- tm_map(corpus, stripWhitespace)
+# # Remove stopwords
+# corpus <- tm_map(corpus, removeWords, stopwords("english"))
+# # Reduce all words to their word stem 
+# corpus <- tm_map(corpus, stemDocument, "english")
+# # Check the content of a review
+# corpus[[137]]$content
+
+# CREATE a DTM and REDUCE SPARCITY
 reviews_source <- VectorSource(mydata$review_text)
 corpus <- VCorpus(reviews_source)
-
-# CLEAN CORPUS
-# Transform all letters to lower-case
-corpus <- tm_map(corpus, content_transformer(tolower))
-# Remove all punctuation characters
-replaceCharacter <- content_transformer(function(x, pattern, replacement)
-  gsub(pattern = pattern,replacement = replacement, x))
-# Address words with "-" and "´"
-corpus <- tm_map(corpus, replaceCharacter, "-", " ")
-corpus <- tm_map(corpus, replaceCharacter, "[[:punct:]]", "")
-# Reduce all whitespace to one and delete line breaks, etc.
-corpus <- tm_map(corpus, stripWhitespace)
-# Remove stopwords
-corpus <- tm_map(corpus, removeWords, stopwords("english"))
-# Reduce all words to their word stem 
-corpus <- tm_map(corpus, stemDocument, "english")
-# Check the content of a review
-corpus[[137]]$content
-
-# CREATE a DOCUMENT-TERM MATRIX and EXCLUDE RARE WORDS
 # Add 2- and 3grams
 NgramTokenizer <-  function(x){
   wordVec <- words(x)
@@ -46,17 +78,14 @@ NgramTokenizer <-  function(x){
   trigramVec <- unlist(lapply(ngrams(wordVec, 3), paste, collapse = " "), use.names = FALSE)
   return(c(wordVec, bigramVec, trigramVec))
 }
-
-# Create document term matrix and exclude terms that occur in less than 5 reviews
+# Create DTM and exclude terms that occur in less than 5 reviews
 # because we expect them to be relevant for only a minor number of observations
 dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(5, Inf)),
                                                    tokenize = NgramTokenizer))
-
 # Reduce the number of rare tokens in the matrix
 dim(dtm)
 dtm <- removeSparseTerms(dtm, sparse = 0.995)
 dim(dtm)
-
 # # Check the result
 # inspect(dtm[1:5, 1:10])
 # findFreqTerms(dtm, lowfreq = 200, highfreq = Inf)
