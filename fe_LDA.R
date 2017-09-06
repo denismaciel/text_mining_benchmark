@@ -4,52 +4,78 @@ if(!require("data.table")) install.packages("data.table"); library("data.table")
 if(!require("tm")) install.packages("tm"); library(tm)
 if(!require("tidytext")) install.packages("tidytext"); library(tidytext)
 
-# DOWNLOAD DATA ----
-# NB!!! Select the dataset you need
-# to_be_cleaned <-readRDS("data_new/amazonBooks_test.rds")
-# to_be_cleaned <-readRDS("data_new/amazonfinefood_test.rds")
-# to_be_cleaned <-readRDS("data_new/imdb_test.RDS")
-# to_be_cleaned <-readRDS("data_new/twitter_test.RDS")
-# 
-to_be_cleaned <-readRDS("data_new/amazonBooks_train.RDS")
-# to_be_cleaned <-readRDS("data_new/amazonfinefood_train.rds")
-# to_be_cleaned <-readRDS("data_new/imdb_train.RDS")
-# to_be_cleaned <-readRDS("data_new/twitter_train.RDS")
 
-# CLEAN DATA ----
-source("dw_cleaning.R")
+# SPECIFY SETTINGS----
+# NB!!! Select the dataset you need
+technique <- "LDA"
+
+ds_name <- "amazonBooks"
+# ds_name <- "amazonfinefood"
+# ds_name <- "imdb"
+# ds_name <- "twitter"
+
+type <- "test"
+file_name <- "data_new/amazonBooks_test.rds"
+# file_name <- "data_new/amazonfinefood_test.rds"
+# file_name <- "data_new/imdb_test.RDS"
+# file_name <- "data_new/twitter_test.RDS"
+
+# type <- "train"
+# file_name <- "data_new/amazonBooks_train.RDS"
+# file_name <- "data_new/amazonfinefood_train.rds"
+# file_name <- "data_new/imdb_train.RDS"
+# file_name <- "data_new/twitter_train.RDS"
+
+size = 5000
+# size = 100000
+# size = 50000
+# size = 20000
+# size = 10000
+# size = 5000
+# size = 2500
+# size = 1000
+
+to_log <- list(
+  technique = technique, 
+  file_name = file_name,
+  ds_name = ds_name,
+  type = type,
+  size = size
+)
+
+
+# DOWNLOAD DATA ----
+raw_data <- readRDS(file_name)
+
 
 # SPLIT DATA ----
-# Split data into 100K, 50K, 20K, 10K, 5K, 25H, 1K and 5K_test
-# FOR 100K and 5K_test:
-# sampled_out <- cleaned_out # CHOOSE WHEN 100K or 5K_test
-  
-# CHOOSE THE NECESSAARY SIZE (excepr for 100K or 5K_test)
-ind_sample <- sample(1:nrow(cleaned_out), size = 50000)
-# ind_sample <- sample(1:nrow(cleaned_out), size = 20000)
-# ind_sample <- sample(1:nrow(cleaned_out), size = 10000)
-# ind_sample <- sample(1:nrow(cleaned_out), size = 5000)
-# ind_sample <- sample(1:nrow(cleaned_out), size = 2500)
-# ind_sample <- sample(1:nrow(cleaned_out), size = 1000)
+if((to_log$size==100000)|((to_log$size==5000)&(type=="test"))) {
+  to_be_cleaned <- raw_data 
+} else {
+  ind_sample <- sample(1:nrow(raw_data), size = to_log$size)
+  to_be_cleaned <- raw_data[ind_sample, ]
+}
 
-sampled_out <- cleaned_out[ind_sample, ]
+
+# CLEAN DATA ----
+start_cleaning <- Sys.time()
+source("dw_cleaning.R")
+end_cleaning <- Sys.time()
 
 
 # CREATE DTM ---
+start_dtm <- Sys.time()
 source("dw_dtm.R")
+end_dtm <- Sys.time()
 
 
 ### LDA itself ----
+start_features <- Sys.time()
 if(!require("topicmodels")) install.packages("topicmodels"); library(topicmodels)
-
-# Call Document Term Matrix
-reviews <- dtm
-
 # Check the number of empty documents in the matrix
-rowTotals <- apply(reviews, 1, sum) # Find the sum of words in each Document
+rowTotals <- apply(dtm, 1, sum) # Find the sum of words in each Document
 sum(rowTotals == 0) # Check if there are reviews in the corpus that doesn't contain any frequent terms
-reviews <- reviews[rowTotals > 0, ] # Delete empty reviews  
-
+reviews <- dtm[rowTotals > 0, ] # Delete empty reviews  
 # Fit the model
 k <- 20
 fit <- LDA(reviews, k, method = "Gibbs", control = list(seed = 123, verbose = 250, burnin = 500, iter = 500))
@@ -61,26 +87,32 @@ fit <- LDA(reviews, k, method = "Gibbs", control = list(seed = 123, verbose = 25
 # ldaOut.topics <- as.matrix(topics(fit))
 ldafeatures <- posterior(fit)
 ldafeatures_final <- ldafeatures$topics # Probability of word being a part of a topic
-mydata <- as.data.frame(mydata)
+mydata <- as.data.frame(cleaned_out)
 features <- mydata[,c("review_id","rating","binary_rating")]
 rowTotals[rowTotals==0]
 features <- features[rowTotals > 0, ] # Needed when some reviews were deleted in the process as empty
 final <- cbind(features,ldafeatures_final)
+end_features <- Sys.time()
 
-# SAVE RESULTS
-saveRDS(final, "features/LDA_amazonBooks_100K.RDS")
+# SAVE RESULTS----
+date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
+saveRDS(final, paste0("./features/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".RDS"))
 
 
-# #### Topic models ----
-# library(ldatuning)
-# # ldatuning to find optimal topics number
-# kTuning <- FindTopicsNumber(
-#   reviews,
-#   topics = seq(from = 16, to = 24, by = 4),
-#   metrics = c("Griffiths2004", "CaoJuan2009", "Arun2010", "Deveaud2014"),
-#   method = "Gibbs",
-#   control = list(seed = 123),
-#   mc.cores = 3L,
-#   verbose = TRUE
-# )
-# FindTopicsNumber_plot(kTuning)
+
+# SAVE LOG ----
+to_log$computation_time <- list(
+  cleaning = list(end_cleaning = end_cleaning, 
+                  start_cleaning = start_cleaning,
+                  duration_cleaning = as.numeric(difftime(end_cleaning, start_cleaning, units = "secs"))),
+  dtm = list(end_dtm = end_dtm, 
+             start_dtm = start_dtm,
+             duration_dtm = as.numeric(difftime(end_dtm, start_dtm, units = "secs"))),
+  features = list(end_features = end_features, 
+                  start_features = start_features,
+                  duration_features = as.numeric(end_features - start_features, units = "secs"))
+)
+to_log
+
+jsonlite::toJSON(to_log, pretty = T) %>% 
+  write(paste0("log_features/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
