@@ -21,6 +21,9 @@ source("dw_cleaning.R")
 
 # SPLIT DATA ----
 # Split data into 100K, 50K, 20K, 10K, 5K, 25H, 1K and 5K_test
+# FOR 100K and 5K_test:
+# sampled_out <- cleaned_out # CHOOSE WHEN 100K or 5K_test
+  
 # CHOOSE THE NECESSAARY SIZE (excepr for 100K or 5K_test)
 ind_sample <- sample(1:nrow(cleaned_out), size = 50000)
 # ind_sample <- sample(1:nrow(cleaned_out), size = 20000)
@@ -29,7 +32,6 @@ ind_sample <- sample(1:nrow(cleaned_out), size = 50000)
 # ind_sample <- sample(1:nrow(cleaned_out), size = 2500)
 # ind_sample <- sample(1:nrow(cleaned_out), size = 1000)
 
-# sampled_out <- cleaned_out # CHOOSE WHEN 100K or 5K_test
 sampled_out <- cleaned_out[ind_sample, ]
 
 
@@ -66,10 +68,7 @@ features <- features[rowTotals > 0, ] # Needed when some reviews were deleted in
 final <- cbind(features,ldafeatures_final)
 
 # SAVE RESULTS
-# saveRDS(final, "data/LDA_features_AmazonBooks.rds")
-# saveRDS(final, "data/LDA_features_twitter_50K.rds")
-# saveRDS(final, "data/LDA_features_yelp.rds")
-saveRDS(final, "data/LDA_features_imdb.rds")
+saveRDS(final, "features/LDA_amazonBooks_100K.RDS")
 
 
 # #### Topic models ----
