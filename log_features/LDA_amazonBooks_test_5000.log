@@ -1,0 +1,23 @@
+{
+  "technique": ["LDA"],
+  "file_name": ["data_new/amazonBooks_test.rds"],
+  "ds_name": ["amazonBooks_test"],
+  "size": [5000],
+  "computation_time": {
+    "cleaning": {
+      "end_cleaning": ["2017-09-06 21:44:37"],
+      "start_cleaning": ["2017-09-06 21:44:32"],
+      "duration_cleaning": [5.8304]
+    },
+    "dtm": {
+      "end_dtm": ["2017-09-06 21:45:02"],
+      "start_dtm": ["2017-09-06 21:44:49"],
+      "duration_dtm": [12.7805]
+    },
+    "features": {
+      "end_features": ["2017-09-06 21:47:33"],
+      "start_features": ["2017-09-06 21:45:04"],
+      "duration_features": [149.1589]
+    }
+  }
+}
