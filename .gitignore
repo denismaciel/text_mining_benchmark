@@ -7,3 +7,4 @@ text8
 model
 viz/
 converter.cpp
+log/*.log
