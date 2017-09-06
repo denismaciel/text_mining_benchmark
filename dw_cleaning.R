@@ -22,3 +22,4 @@ cleaned_out <- df_long %>%
   summarise(review_text = paste0(word_stem, collapse = " "))
 
 rm(df_long)
+rm(to_be_cleaned)
