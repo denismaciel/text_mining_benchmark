@@ -1,4 +1,3 @@
-
 ### PREPARATION ----
 # DOWNLOAD PACKAGES
 if(!require("data.table")) install.packages("data.table"); library("data.table")
@@ -19,78 +18,23 @@ to_be_cleaned <-readRDS("data_new/amazonBooks_train.RDS")
 
 # CLEAN DATA ----
 source("dw_cleaning.R")
-rm(to_be_cleaned)
+
+# SPLIT DATA ----
+# Split data into 100K, 50K, 20K, 10K, 5K, 25H, 1K and 5K_test
+# CHOOSE THE NECESSAARY SIZE (excepr for 100K or 5K_test)
+ind_sample <- sample(1:nrow(cleaned_out), size = 50000)
+# ind_sample <- sample(1:nrow(cleaned_out), size = 20000)
+# ind_sample <- sample(1:nrow(cleaned_out), size = 10000)
+# ind_sample <- sample(1:nrow(cleaned_out), size = 5000)
+# ind_sample <- sample(1:nrow(cleaned_out), size = 2500)
+# ind_sample <- sample(1:nrow(cleaned_out), size = 1000)
+
+# sampled_out <- cleaned_out # CHOOSE WHEN 100K or 5K_test
+sampled_out <- cleaned_out[ind_sample, ]
+
 
 # CREATE DTM ---
 source("dw_dtm.R")
-
-
-
-
-# # str_count(cleaned_dtm$word, " ") %>% table()
-# # 
-# # trigramVec <- cleaned_out %>% 
-# #   unnest_tokens(word, review_text, token = "ngrams", n=3)
-# # 
-# # bigramVec <- cleaned_out %>% 
-# #   unnest_tokens(word, review_text, token = "ngrams", n=2)
-# # 
-# # wordVec <- cleaned_dtm <- cleaned_out %>% 
-# #   unnest_tokens(word, review_text, token = "words")
-# # 
-# # a <- bind_rows(trigramVec,bigramVec,wordVec)
-# # 
-# # dtm <- a %>% 
-# #   count(review_id, word, sort = TRUE) %>% 
-# #   cast_dtm(review_id, word, n)
-# 
-# 
-# 
-# # CREATE CORPUS
-# reviews_source <- VectorSource(mydata$review_text)
-# corpus <- VCorpus(reviews_source)
-# 
-# # CLEAN CORPUS
-# # Transform all letters to lower-case
-# corpus <- tm_map(corpus, content_transformer(tolower))
-# # Remove all punctuation characters
-# replaceCharacter <- content_transformer(function(x, pattern, replacement)
-#   gsub(pattern = pattern,replacement = replacement, x))
-# # Address words with "-" and "´"
-# corpus <- tm_map(corpus, replaceCharacter, "-", " ")
-# corpus <- tm_map(corpus, replaceCharacter, "[[:punct:]]", "")
-# # Reduce all whitespace to one and delete line breaks, etc.
-# corpus <- tm_map(corpus, stripWhitespace)
-# # Remove stopwords
-# corpus <- tm_map(corpus, removeWords, stopwords("english"))
-# # Reduce all words to their word stem 
-# corpus <- tm_map(corpus, stemDocument, "english")
-# # Check the content of a review
-# corpus[[137]]$content
-
-# CREATE a DTM and REDUCE SPARCITY
-reviews_source <- VectorSource(mydata$review_text)
-corpus <- VCorpus(reviews_source)
-# Add 2- and 3grams
-NgramTokenizer <-  function(x){
-  wordVec <- words(x)
-  bigramVec <- unlist(lapply(ngrams(wordVec, 2), paste, collapse = " "), use.names = FALSE)
-  trigramVec <- unlist(lapply(ngrams(wordVec, 3), paste, collapse = " "), use.names = FALSE)
-  return(c(wordVec, bigramVec, trigramVec))
-}
-# Create DTM and exclude terms that occur in less than 5 reviews
-# because we expect them to be relevant for only a minor number of observations
-dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(5, Inf)),
-                                                   tokenize = NgramTokenizer))
-# Reduce the number of rare tokens in the matrix
-dim(dtm)
-dtm <- removeSparseTerms(dtm, sparse = 0.995)
-dim(dtm)
-# # Check the result
-# inspect(dtm[1:5, 1:10])
-# findFreqTerms(dtm, lowfreq = 200, highfreq = Inf)
-# head(sort(colSums(as.matrix(dtm)), decreasing = TRUE), 20)
-# dtm <- as.matrix(dtm)
 
 
 ### LDA itself ----
