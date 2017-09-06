@@ -1,6 +1,5 @@
 # CREATE CORPUS
-reviews_source <- VectorSource(sampled_out$review_text)
-rm(sampled_out)
+reviews_source <- VectorSource(cleaned_out$review_text)
 corpus <- VCorpus(reviews_source)
 rm(reviews_source)
 
