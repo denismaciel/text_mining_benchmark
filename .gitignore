@@ -8,3 +8,4 @@ model
 viz/
 converter.cpp
 log/*.log
+log_features/*
