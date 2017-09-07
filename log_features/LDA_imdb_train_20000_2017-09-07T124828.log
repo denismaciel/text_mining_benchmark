@@ -1,0 +1,24 @@
+{
+  "technique": ["LDA"],
+  "file_name": ["data_new/imdb_train.RDS"],
+  "ds_name": ["imdb"],
+  "type": ["train"],
+  "size": [20000],
+  "computation_time": {
+    "cleaning": {
+      "end_cleaning": ["2017-09-07 12:38:29"],
+      "start_cleaning": ["2017-09-07 12:38:04"],
+      "duration_cleaning": [25.3494]
+    },
+    "dtm": {
+      "end_dtm": ["2017-09-07 12:39:27"],
+      "start_dtm": ["2017-09-07 12:38:29"],
+      "duration_dtm": [57.629]
+    },
+    "features": {
+      "end_features": ["2017-09-07 12:48:28"],
+      "start_features": ["2017-09-07 12:39:27"],
+      "duration_features": [540.94]
+    }
+  }
+}
