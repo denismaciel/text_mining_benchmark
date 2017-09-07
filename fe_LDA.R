@@ -7,33 +7,30 @@ if(!require("tidytext")) install.packages("tidytext"); library(tidytext)
 
 # SPECIFY SETTINGS----
 # NB!!! Select the dataset you need
-technique <- "LDA"
 
+# CHOOSE
 ds_name <- "amazonBooks"
 # ds_name <- "amazonfinefood"
 # ds_name <- "imdb"
 # ds_name <- "twitter"
 
-type <- "test"
-file_name <- "data_new/amazonBooks_test.rds"
-# file_name <- "data_new/amazonfinefood_test.rds"
-# file_name <- "data_new/imdb_test.RDS"
-# file_name <- "data_new/twitter_test.RDS"
+# CHOOSE
+# type <- "test"
+type <- "train"
 
-# type <- "train"
-# file_name <- "data_new/amazonBooks_train.RDS"
-# file_name <- "data_new/amazonfinefood_train.rds"
-# file_name <- "data_new/imdb_train.RDS"
-# file_name <- "data_new/twitter_train.RDS"
-
-size = 5000
-# size = 100000
+# CHOOSE
+# size = 5000
+size = 100000
 # size = 50000
 # size = 20000
 # size = 10000
 # size = 5000
 # size = 2500
 # size = 1000
+
+
+technique <- "LDA"
+file_name <- paste0("data_new/", ds_name, "_", type, ".RDS")
 
 to_log <- list(
   technique = technique, 
@@ -49,12 +46,9 @@ raw_data <- readRDS(file_name)
 
 
 # SPLIT DATA ----
-if((to_log$size==100000)|((to_log$size==5000)&(type=="test"))) {
-  to_be_cleaned <- raw_data 
-} else {
-  ind_sample <- sample(1:nrow(raw_data), size = to_log$size)
-  to_be_cleaned <- raw_data[ind_sample, ]
-}
+ind_sample <- sample(1:nrow(raw_data), size = to_log$size)
+to_be_cleaned <- raw_data[ind_sample, ]
+rm(raw_data)
 
 
 # CLEAN DATA ----
@@ -75,7 +69,8 @@ if(!require("topicmodels")) install.packages("topicmodels"); library(topicmodels
 # Check the number of empty documents in the matrix
 rowTotals <- apply(dtm, 1, sum) # Find the sum of words in each Document
 sum(rowTotals == 0) # Check if there are reviews in the corpus that doesn't contain any frequent terms
-reviews <- dtm[rowTotals > 0, ] # Delete empty reviews  
+reviews <- dtm[rowTotals > 0, ] # Delete empty reviews
+rm(dtm)
 # Fit the model
 k <- 20
 fit <- LDA(reviews, k, method = "Gibbs", control = list(seed = 123, verbose = 250, burnin = 500, iter = 500))
@@ -95,9 +90,7 @@ final <- cbind(features,ldafeatures_final)
 end_features <- Sys.time()
 
 # SAVE RESULTS----
-date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
-saveRDS(final, paste0("./features/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".RDS"))
-
+saveRDS(final, paste0("./features/", to_log$technique, "_", ds_name, "_", type, "_", size, ".RDS"))
 
 
 # SAVE LOG ----
@@ -114,5 +107,6 @@ to_log$computation_time <- list(
 )
 to_log
 
+date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
 jsonlite::toJSON(to_log, pretty = T) %>% 
   write(paste0("log_features/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
