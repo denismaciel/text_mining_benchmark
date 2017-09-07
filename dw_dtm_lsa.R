@@ -13,17 +13,10 @@ NgramTokenizer <-  function(x){
 
 # CREATE DTM and REDUCE SPARCIRY
 # When creating DTM exclude tokens that occur in less than 10 reviews
-dtm <- TermDocumentMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
+tdm <- TermDocumentMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
                                                  tokenize = NgramTokenizer))
 rm(NgramTokenizer)
 rm(corpus)
 # Reduce the sparcity of the matrix
 # dim(dtm)
-tdm <- removeSparseTerms(dtm, sparse = 0.99)
-# dim(dtm)
-
-# # Check the result
-# inspect(dtm[1:5, 1:10])
-# findFreqTerms(dtm, lowfreq = 200, highfreq = Inf)
-# head(sort(colSums(as.matrix(dtm)), decreasing = TRUE), 20)
-# dtm <- as.matrix(dtm)
+tdm <- removeSparseTerms(tdm, sparse = 0.99)
