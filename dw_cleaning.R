@@ -4,7 +4,7 @@ library(tidytext)
 library(tm)
 if(!require("SnowballC")) install.packages("SnowballC"); library("SnowballC")
 
-# to_be_cleaned <- readRDS("data_new/imdb_train.RDS")
+# to_be_cleaned <- readRDS("data_new/amazonfinefood_test.RDS")
 
 df_long <- to_be_cleaned %>% 
   mutate(review_text = str_replace_all(review_text, "\\.", "\\. ")) %>% 
@@ -23,3 +23,9 @@ cleaned_out <- df_long %>%
 
 rm(df_long)
 rm(to_be_cleaned)
+
+
+# cleaned_out$type <- "test"
+# saveRDS(cleaned_out, paste0("./data_new/", "amazonfinefood_test", "_clean", ".RDS"))
+
+
