@@ -10,9 +10,9 @@
   
   # CHOOSE
   # ds_name <- "amazonBooks"
-  # ds_name <- "amazonfinefood"
+  ds_name <- "amazonfinefood"
   # ds_name <- "imdb"
-  ds_name <- "twitter"
+  # ds_name <- "twitter"
   # ds_name <- "yelp"
   
   # CHOOSE
@@ -21,13 +21,13 @@
   
   # CHOOSE
   # size = 5000
-  size = 100000
+  # size = 100000
   # size = 50000
   # size = 20000
   # size = 10000
   # size = 5000
   # size = 2500
-  # size = 1000
+  size = 1000
   
   # CHOOSE
   approach <- "mix"
@@ -110,7 +110,7 @@
   end_features <- Sys.time()
   
   # SAVE RESULTS----
-  saveRDS(final, paste0("./features/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, "_", ".RDS"))
+  saveRDS(final, paste0("./features/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
   
   
   # SAVE LOG ----
