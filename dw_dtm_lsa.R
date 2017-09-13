@@ -15,6 +15,10 @@ NgramTokenizer <-  function(x){
 # When creating DTM exclude tokens that occur in less than 10 reviews
 tdm <- TermDocumentMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
                                                  tokenize = NgramTokenizer))
+#tdm <- TermDocumentMatrix(corpus, control = list(bounds = list(global = c(1, Inf)),tokenize = NgramTokenizer,dictionary=rownames(tdm_train)))
+
+
+
 rm(NgramTokenizer)
 rm(corpus)
 # Reduce the sparcity of the matrix
