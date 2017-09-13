@@ -1,3 +1,6 @@
+#REMEMBER TO SAVE  tdm_train <- tdm after first run if blind approach (fold in)
+#AND IN SECOND RUN : set dictionary=rownames(tdm_train) when creating TermDocumentMatrix for test set (in dw_dtm_lsa.R)
+
 ### PREPARATION ----
 # DOWNLOAD PACKAGES
 if(!require("data.table")) install.packages("data.table"); library("data.table")
@@ -63,7 +66,6 @@ end_cleaning <- Sys.time()
 start_tdm <- Sys.time()
 source("dw_dtm_lsa.R")
 end_tdm <- Sys.time()
-
 
 
 
