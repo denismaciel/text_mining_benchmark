@@ -15,11 +15,14 @@ NgramTokenizer <-  function(x){
 # When creating DTM exclude tokens that occur in less than 10 reviews
 dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
                                                  tokenize = NgramTokenizer))
+# dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(1, Inf)),
+#                                                  tokenize = NgramTokenizer)) # for TWITTER
 rm(NgramTokenizer)
 rm(corpus)
 # Reduce the sparcity of the matrix
 # dim(dtm)
 dtm <- removeSparseTerms(dtm, sparse = 0.99)
+# dtm <- removeSparseTerms(dtm, sparse = 0.9998) # for TWITTER
 # dim(dtm)
 
 # # Check the result
