@@ -30,8 +30,8 @@
   # size = 1000
   
   # CHOOSE
-  # approach <- "mix"
-  approach <- "blind"
+  approach <- "mix"
+  # approach <- "blind"
   
   
   technique <- "LDA"
@@ -99,7 +99,11 @@
   ldafeatures <- posterior(fit)
   ldafeatures_final <- ldafeatures$topics # Probability of word being a part of a topic
   mydata <- as.data.frame(cleaned_out)
-  features <- mydata[,c("review_id","rating","binary_rating")]
+  if(approach == "mix"){
+    features <- mydata[,c("review_id","rating","binary_rating","type")]
+  }else{
+    features <- mydata[,c("review_id","rating","binary_rating")]
+  }
   rowTotals[rowTotals==0]
   features <- features[rowTotals > 0, ] # Needed when some reviews were deleted in the process as empty
   final <- cbind(features,ldafeatures_final)
