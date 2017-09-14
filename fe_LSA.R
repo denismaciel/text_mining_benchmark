@@ -32,8 +32,8 @@ type <- "train"
 # size = 1000
 
 # CHOOSE
-#approach <- "mix"
- approach <- "foldin" 
+approach <- "mix"
+# approach <- "foldin" 
  
 
 technique <- "LSA"
