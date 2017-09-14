@@ -16,8 +16,12 @@ for (i in 1:NROW(sizelist)){
       ds_name <- dsnamelist[j]
       size <- sizelist[i]
       approach <- approachlist[k]
-      print(paste(size, ds_name, approach, sep="/"))
-      source("fe_LSA.R")
+      
+      if (!(ds_name =="imdb" && size<20000)){
+        print(paste(size, ds_name, approach, sep="/"))
+        source("fe_LSA.R")
+      }
+      
       #clean workspace except for stuff needed here
       rm(list=ls()[! ls() %in% c("sizelist","dsnamelist","approachlist","i","j","k")])
       
