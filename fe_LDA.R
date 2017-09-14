@@ -9,8 +9,8 @@
   # NB!!! Select the dataset you need
   
   # CHOOSE
-  # ds_name <- "amazonBooks"
-  ds_name <- "amazonfinefood"
+  ds_name <- "amazonBooks"
+  # ds_name <- "amazonfinefood"
   # ds_name <- "imdb"
   # ds_name <- "twitter"
   # ds_name <- "yelp"
@@ -30,8 +30,9 @@
   size = 1000
   
   # CHOOSE
-  approach <- "mix"
-  # approach <- "blind"
+  # approach <- "mix"
+  approach <- "blind"
+
   
   
   technique <- "LDA"
@@ -62,10 +63,10 @@
   source("dw_cleaning.R")
   end_cleaning <- Sys.time()
   
+  cleaned_out$type <- "train"
   
   # MERGE WITH 5K (FOR "MIX" APPROACH ONLY!)
   if(approach == "mix"){
-    cleaned_out$type <- "train"
     test_name <- paste0("data_new/", ds_name, "_test_clean", ".RDS")
     test_data <- readRDS(test_name)
     cleaned_out <- bind_rows(cleaned_out, test_data)
@@ -99,11 +100,7 @@
   ldafeatures <- posterior(fit)
   ldafeatures_final <- ldafeatures$topics # Probability of word being a part of a topic
   mydata <- as.data.frame(cleaned_out)
-  if(approach == "mix"){
-    features <- mydata[,c("review_id","rating","binary_rating","type")]
-  }else{
-    features <- mydata[,c("review_id","rating","binary_rating")]
-  }
+  features <- mydata[,c("review_id","rating","binary_rating","type")]
   rowTotals[rowTotals==0]
   features <- features[rowTotals > 0, ] # Needed when some reviews were deleted in the process as empty
   final <- cbind(features,ldafeatures_final)
@@ -112,6 +109,7 @@
   # SAVE RESULTS----
   saveRDS(final, paste0("./features/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
   
+  saveRDS(fit, paste0("./objects/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
   
   # SAVE LOG ----
   to_log$computation_time <- list(
@@ -130,3 +128,22 @@
   date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
   jsonlite::toJSON(to_log, pretty = T) %>% 
     write(paste0("log_features/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
+  
+  
+  
+  
+  
+  # FOLDING IN ----
+  rm(reviews)
+  rm(cleaned_out)
+  rm(mydata)
+  rm(ldafeatures)
+  rm(ldafeatures_final)
+  rm(features)
+  rm(rowTotals)
+  
+  if(approach == "blind"){
+    approach <- "foldin"
+    source("fe_foldin.R")
+  }
+  
