@@ -57,7 +57,7 @@ tt %>% dim
 tt %>% count(word, sort = TRUE)
 
 #LENGTH OF REVIEW
-word_count_per_review <- file_name %>%
+word_count_per_review <- raw_data %>%
   unnest_tokens(word, review_text) %>%
   anti_join(stop_words) %>%
   group_by(word, review_id) %>%
