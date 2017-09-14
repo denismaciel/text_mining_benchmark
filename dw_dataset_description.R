@@ -38,7 +38,7 @@ to_log <- list(
 raw_data <- readRDS(file_name)
 
 # ============================= Dataset Description ===================================
-tt <- file_name %>%
+tt <- raw_data %>%
   select(review_id, binary_rating, rating, review_text) %>%
   unnest_tokens(word, review_text) 
 
