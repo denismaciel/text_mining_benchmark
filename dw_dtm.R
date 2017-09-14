@@ -1,3 +1,5 @@
+if(!require("tm")) install.packages("tm"); library(tm)
+
 # CREATE CORPUS
 reviews_source <- VectorSource(cleaned_out$review_text)
 corpus <- VCorpus(reviews_source)
@@ -12,17 +14,23 @@ NgramTokenizer <-  function(x){
 }
 
 # CREATE DTM and REDUCE SPARCIRY
-# When creating DTM exclude tokens that occur in less than 10 reviews
-dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
-                                                 tokenize = NgramTokenizer))
-# dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(1, Inf)),
-#                                                  tokenize = NgramTokenizer)) # for TWITTER
+# When creating DTM exclude tokens that occur in less than 10 reviews (NOT IN THE CASE OF TWITTER)
+if(ds_name == "twitter"){
+  dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(1, Inf)),
+                                                   tokenize = NgramTokenizer)) # for TWITTER
+}else{
+  dtm <- DocumentTermMatrix(corpus, control = list(bounds = list(global = c(10, Inf)),
+                                                   tokenize = NgramTokenizer))
+}
 rm(NgramTokenizer)
 rm(corpus)
 # Reduce the sparcity of the matrix
 # dim(dtm)
-dtm <- removeSparseTerms(dtm, sparse = 0.99)
-# dtm <- removeSparseTerms(dtm, sparse = 0.9998) # for TWITTER
+if(ds_name == "twitter"){
+  dtm <- removeSparseTerms(dtm, sparse = 0.9998) # for TWITTER
+}else{
+  dtm <- removeSparseTerms(dtm, sparse = 0.99)
+}
 # dim(dtm)
 
 # # Check the result
@@ -30,3 +38,5 @@ dtm <- removeSparseTerms(dtm, sparse = 0.99)
 # findFreqTerms(dtm, lowfreq = 200, highfreq = Inf)
 # head(sort(colSums(as.matrix(dtm)), decreasing = TRUE), 20)
 # dtm <- as.matrix(dtm)
+
+# saveRDS(dtm, paste0("./data_new/", ds_name, "_test_dtm", ".RDS"))
