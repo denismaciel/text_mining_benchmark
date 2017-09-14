@@ -42,7 +42,6 @@ to_log_foldin$computation_time <- list(
                 start_foldin = start_foldin,
                 duration_foldin = as.numeric(end_foldin - start_foldin, units = "secs"))
 )
-to_log_foldin
 
 date_foldin <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
 jsonlite::toJSON(to_log_foldin, pretty = T) %>% 
