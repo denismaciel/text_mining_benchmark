@@ -26,8 +26,8 @@
   # size = 20000
   # size = 10000
   # size = 5000
-  # size = 2500
-  size = 1000
+  size = 2500
+  # size = 1000
   
   # CHOOSE
   # approach <- "mix"
@@ -81,7 +81,7 @@
   
   
   ### LDA itself ----
-  start_features <- Sys.time()
+  start_preparation_features <- Sys.time()
   if(!require("topicmodels")) install.packages("topicmodels"); library(topicmodels)
   # Check the number of empty documents in the matrix
   rowTotals <- apply(dtm, 1, sum) # Find the sum of words in each Document
@@ -90,6 +90,9 @@
   rm(dtm)
   # Fit the model
   k <- 20
+  end_preparation_features <- Sys.time()
+  
+  start_features <- Sys.time()
   fit <- LDA(reviews, k, method = "Gibbs", control = list(seed = 123, verbose = 250, burnin = 500, iter = 500))
   
   # GET Results
@@ -106,10 +109,14 @@
   final <- cbind(features,ldafeatures_final)
   end_features <- Sys.time()
   
+  
   # SAVE RESULTS----
   saveRDS(final, paste0("./features/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
   
   saveRDS(fit, paste0("./objects/", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
+  saveRDS(reviews, paste0("./objects/", "reviews_", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
+  saveRDS(features, paste0("./objects/", "first_columns_", to_log$technique, "_", approach, "_", ds_name, "_", type, "_", size, ".RDS"))
+  
   
   # SAVE LOG ----
   to_log$computation_time <- list(
@@ -119,6 +126,9 @@
     dtm = list(end_dtm = end_dtm, 
                start_dtm = start_dtm,
                duration_dtm = as.numeric(difftime(end_dtm, start_dtm, units = "secs"))),
+    preparation = list(end_preparation_features = end_preparation_features, 
+                    start_preparation_features = start_preparation_features,
+                    duration_preparation_features = as.numeric(end_preparation_features - start_preparation_features, units = "secs")),
     features = list(end_features = end_features, 
                     start_features = start_features,
                     duration_features = as.numeric(end_features - start_features, units = "secs"))
@@ -142,8 +152,9 @@
   rm(features)
   rm(rowTotals)
   
-  if(approach == "blind"){
+  if(approach == "blind" & type == "train"){
     approach <- "foldin"
     source("fe_foldin.R")
+    to_log_foldin
   }
   
