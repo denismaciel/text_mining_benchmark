@@ -13,34 +13,9 @@ library(jsonlite)
 
 # ============= Determine the model parameters and features to be used  =====================
 
-technique <- "LDA"
+technique <- "LSA"
 dataset <- "amazonfinefood"
 size <- "50000"
-
-# Every time the model is run, the results are logged to a text file for future reference.
-
-# files <- list.files("/Users/denismaciel/Dropbox/Features/", pattern = ".RDS")
-
-# Technique: LDA
-# Approach: blind
-# Dataset: twitter
-# Type: train test (only relevant for the blind)
-# Size: 5000
-
-
-# file_path_full <- "/Users/denismaciel/Dropbox/Features/LDA_blind_amazonBooks_test_5000.RDS"
-# file_path <- file_path %>% str_replace_all("/[A-Za-z0-9/]{1,1000}/|[A-Za-z0-9/]{1,1000}/|\\.RDS", "")
-#
-# file_path <- str_split(file_path, "_")[[1]]
-# file_path['technique']
-#
-# names(file_path) <- c("technique", "approach", "dataset", "type", "size")
-# file_path = file_path,
-# technique = file_path[['technique']],
-# approach = file_path[['approach']],
-# dataset = file_path[['dataset']],
-# type = file_path[['type']],
-# size = file_path[['size']],
 
 to_log <- list(file_path = list(technique  = technique,
                                 dataset = dataset,
@@ -69,94 +44,42 @@ to_log <- list(file_path = list(technique  = technique,
 
 
 # ============================= Prepare the Data ===================================
-folder <- "/Users/denismaciel/Dropbox/Features/"
-#Blind Seen
-blind_seen <- paste0(folder,
-                     paste(to_log$file_path$technique,
-                           "blind",
-                           to_log$file_path$dataset,
-                           "train",
-                           to_log$file_path$size,
-                           sep = "_"),
-                     ".RDS")
-to_log$paths_used <- list(blind_seen = blind_seen)
-blind_seen <- as_tibble(readRDS(blind_seen))
-#Blind Blind
-blind_blind <- paste0(folder,
-                      paste(to_log$file_path$technique,
-                            "blind",
-                            to_log$file_path$dataset,
-                            "test",
-                            "5000",
-                            sep = "_"),
-                      ".RDS")
-to_log$paths_used$blind_blind <- blind_blind
-blind_blind <- as_tibble(readRDS(blind_blind))
-#Mix
-mix <- paste0(folder,
+folder <- "/Users/denismaciel/Desktop/ben/"
+
+#foldin
+foldin <- paste0(folder,
               paste(to_log$file_path$technique,
-                    "mix",
+                    "foldin",
                     to_log$file_path$dataset,
                     "train",
                     to_log$file_path$size,
                     sep = "_"),
               ".RDS")
-to_log$paths_used$mix <- mix
-mix <- as_tibble(readRDS(mix))
+to_log$paths_used$foldin <- foldin
+foldin <- as_tibble(readRDS(foldin))
 
 # Columns named after numbers cause problems when modelling: Change that
-col_ind <- str_detect(colnames(blind_seen), "[0-9]{1,5}")
-colnames(blind_seen)[col_ind] <- paste0("feat_", colnames(blind_seen[, col_ind]))
-
-col_ind <- str_detect(colnames(blind_blind), "[0-9]{1,5}")
-colnames(blind_blind)[col_ind] <- paste0("feat_", colnames(blind_blind[, col_ind]))
-
-col_ind <- str_detect(colnames(mix), "[0-9]{1,5}")
-colnames(mix)[col_ind] <- paste0("feat_", colnames(mix[, col_ind]))
+col_ind <- str_detect(colnames(foldin), "[0-9]{1,5}")
+colnames(foldin)[col_ind] <- paste0("feat_", colnames(foldin[, col_ind]))
 
 # ============================= Split Train and Test Sets ===================================
 
-# Blind Seen
-ind <- sample(1:nrow(blind_seen), round(nrow(blind_seen)*0.80), replace = FALSE)
-
-blind_seen_train <- blind_seen[ind, ]
-blind_seen_test <- blind_seen[-ind, ]
-
-blind_seen_train_label <- blind_seen_train[["binary_rating"]]
-blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating)
-blind_seen_train_featsparse <- Matrix::sparse.model.matrix(data = blind_seen_train_feat,
-                                                           object = binary_rating ~ .-1)
-
-blind_seen_test_label <- blind_seen_test[["binary_rating"]]
-blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating)
-blind_seen_test_featsparse <- Matrix::sparse.model.matrix(data = blind_seen_test_feat,
-                                                          object = binary_rating ~ .-1)
-
-# Blind Blind (Used as test set only)
-blind_blind_label <- blind_blind[["binary_rating"]]
-blind_blind_feat <- blind_blind %>% select(-review_id, -rating)
-blind_blind_featsparse <- Matrix::sparse.model.matrix(data = blind_blind_feat,
-                                                      object = binary_rating ~ .-1)
-
 # Mix
-mix_train <- mix[mix$type == "train", ]
-mix_test <- mix[mix$type == "test", ]
+foldin_train <- foldin[foldin$type == "train", ]
+foldin_test <- foldin[foldin$type == "test", ]
 
-mix_train_label <- mix_train[["binary_rating"]]
-mix_train_feat <- mix_train %>% select(-review_id, -rating, -type)
-mix_train_featsparse <- Matrix::sparse.model.matrix(data = mix_train_feat,
+foldin_train_label <- foldin_train[["binary_rating"]]
+foldin_train_feat <- foldin_train %>% select(-review_id, -rating, -type)
+foldin_train_featsparse <- Matrix::sparse.model.matrix(data = foldin_train_feat,
                                                     object = binary_rating ~. -1)
 
-mix_test_label <- mix_test[["binary_rating"]]
-mix_test_feat <- mix_test %>% select(-review_id, -rating, -type)
-mix_test_featsparse <- Matrix::sparse.model.matrix(data = mix_test_feat,
+foldin_test_label <- foldin_test[["binary_rating"]]
+foldin_test_feat <- foldin_test %>% select(-review_id, -rating, -type)
+foldin_test_featsparse <- Matrix::sparse.model.matrix(data = foldin_test_feat,
                                                    object = binary_rating ~. -1)
 # Garbage collection
-rm(blind_seen_train_feat,
-   blind_seen_test_feat,
-   mix_train_feat,
-   mix_test_feat,
-   blind_blind_feat)
+rm(foldin_train_feat,
+   foldin_test_feat)
 
 # ============================= Train the Model ===================================
 run_models <- function(features, label){
@@ -187,10 +110,8 @@ run_models <- function(features, label){
 }
 
 # TRAIN!!!
-mod_blind_seen_train <- run_models(label = blind_seen_train$binary_rating,
-                                   features = blind_seen_train_featsparse)
-mod_mix <- run_models(label = mix_train_label,
-                      features = mix_train_featsparse)
+mod_foldin <- run_models(label = foldin_train_label,
+                      features = foldin_train_featsparse)
 
 # ============================= Predict on Test Set ===================================
 make_predicitons <- function(features, label, models){
@@ -203,17 +124,9 @@ make_predicitons <- function(features, label, models){
 }
 
 # BLIND APPROACH
-predictions_mix <- make_predicitons(features = mix_test_featsparse,
-                                    label = mix_test_label,
-                                    models = mod_mix)
-
-predictions_blind_seen <- make_predicitons(features = blind_seen_test_featsparse,
-                                           label = blind_seen_test_label,
-                                           models = mod_blind_seen_train)
-
-predicitons_blind_blind <- make_predicitons(features = blind_blind_featsparse,
-                                            label = blind_blind_label,
-                                            models = mod_blind_seen_train)
+predictions_foldin <- make_predicitons(features = foldin_test_featsparse,
+                                    label = foldin_test_label,
+                                    models = mod_foldin)
 
 # ============================= ASSESSMENT ===================================
 assess_model <- function(pred_test){
@@ -269,9 +182,7 @@ assess_model <- function(pred_test){
   return(list(accuracy, auc))
 }
 
-to_log$results$mix <- assess_model(predictions_mix)
-to_log$results$blind_seen <- assess_model(predictions_blind_seen)
-to_log$results$blind_blind <- assess_model(predicitons_blind_blind)
+to_log$results$foldin <- assess_model(predictions_foldin)
 
 # ============================= Log Results ===================================
 log <- toJSON(to_log, pretty = TRUE)  
