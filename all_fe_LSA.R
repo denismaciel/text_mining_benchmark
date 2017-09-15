@@ -17,7 +17,7 @@ for (i in 1:NROW(sizelist)){
       size <- sizelist[i]
       approach <- approachlist[k]
       
-      if (!(ds_name =="imdb" && size<20000)){
+      if (!(ds_name =="imdb" && size>20000)){
         print(paste(size, ds_name, approach, sep="/"))
         source("fe_LSA.R")
       }
