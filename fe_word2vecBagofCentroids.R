@@ -1,44 +1,39 @@
+if(!require("data.table")) install.packages("data.table"); library("data.table")
+if(!require("tidyverse")) install.packages("tidyverse"); library("tidyverse")
+if(!require("devtools")) install.packages("devtools"); library("devtools")
+if(!require("rword2vec")) install.packages("rword2vec"); library("rword2vec")
+if(!require("Rcpp")) install.packages("Rcpp"); library("Rcpp")
+if(!require("RcppArmadillo")) install.packages("RcppArmadillo"); library("RcppArmadillo")
+if(!require("tm")) install.packages("tm"); library("tm")
+if(!require("rpart")) install.packages("rpart"); library("rpart")
+
+
+
+
+
 #Bag of centroids
+for (i in 1:7){
 
-train <- readRDS("feats_dotlic/yelp_clean_train")
-test <- readRDS("feats_dotlic/yelp_clean_test")
-
-
+  train <- readRDS("data_new/amazonBooks_train.RDS")
+  test <- readRDS("data_new/amazonBooks_test.rds")
+  
 
 # CHOOSE
-#ds_name <- "amazonBooks"
-##ds_name <- "amazonfinefood"
+ds_name <- "amazonBooks"
+#ds_name <- "amazonfinefood"
 #ds_name <- "imdb"
 #ds_name <- "twitter"
-ds_name <- "yelp"
+#ds_name <- "yelp"
 
 # CHOOSE
 # type <- "test"
 type <- "train"
-
-# CHOOSE
-size = 100000
-#size = 50000
-#size = 20000
-#size = 10000
-#size = 5000
-#size = 2500
-#size = 1000
-for (i in 1:7){
+list_cuts <- as.list(c(1000,2500,5000,10000,20000,50000,100000))
   
-  ds_name <- "amazonBooks"
-  type <- "train"
-  list_cuts <- as.list(c(1000,2500,5000,10000,20000,50000,100000))
-  
-  
-  train <- readRDS("data_new/amazonBooks_train.RDS")
-  test <- readRDS("data_new/amazonBooks_test.rds")
-  
-  
-  size <- 100000
+size <- list_cuts[[i]]
   
 
-technique <- "word2vec_centroids"
+technique <- "word2vecCentroids"
 file_name <- paste0("data_new/", ds_name, "_", type, ".RDS")
 
 to_log <- list(
@@ -59,10 +54,18 @@ sub_ids <- sample(1:nrow(df_sub), nrow(df_sub))
 
 train <- df_sub[sub_ids,]
 
+df <- data.frame(row.names = (1:(nrow(train)+nrow(test))))
+df$review_id <- NA
+df$rating <- NA
+df$binary_rating <- NA
+df$review_text <- NA
+df[1:nrow(train),] <- train 
+df[(nrow(train)+1):(nrow(train)+nrow(test)),] <- test
+
 to_be_cleaned <- data.frame(row.names = (1:(nrow(train)+nrow(test))))
 to_be_cleaned$review_id <- NA
-to_be_cleaned$binary_rating <- NA
 to_be_cleaned$rating <- NA
+to_be_cleaned$binary_rating <- NA
 to_be_cleaned$review_text <- NA
 to_be_cleaned[1:nrow(train),] <- train 
 to_be_cleaned[(nrow(train)+1):(nrow(train)+nrow(test)),] <- test
@@ -70,9 +73,10 @@ to_be_cleaned[(nrow(train)+1):(nrow(train)+nrow(test)),] <- test
 test_dummy <- data.frame(row.names = (1:nrow(to_be_cleaned)))
 test_dummy$review_id <- NA
 test_dummy$review_id <- to_be_cleaned$review_id
-test_dummy$test <- NA
-test_dummy$test[1:size] <- 0
-test_dummy$test[(size+1):nrow(test_dummy)] <- 1
+test_dummy$type <- NA
+test_dummy$type[1:size] <- 0
+test_dummy$type[(size+1):nrow(test_dummy)] <- 1
+
 
 source("dw_cleaning.R")
 df <- cleaned_out
@@ -80,12 +84,12 @@ df <- cleaned_out
 
 
 df <- merge.data.frame(df,test_dummy, by = "review_id")
-
+df$type <- ifelse(df$type == "0","train", "test")
 remove(cleaned_out, df_sub, test_dummy)
 
-df_int <- split ( df,df$test)
-train <- df_int$`0`
-test <- df_int$`1`
+df_int <- split ( df,df$type)
+train <- df_int$train
+test <- df_int$test
 
 remove(df_int)
 
@@ -121,22 +125,26 @@ end_kmean <- Sys.time()
 start_features <- Sys.time()
 d <- NULL
 d <- strsplit(df$review_text," ")
-for(i in 1:nrow(df))
+for(j in 1:nrow(df))
 {
-  d[[i]] <- gsub("^\\s+|\\s+$", "",d[[i]])
+  d[[j]] <- gsub("^\\s+|\\s+$", "",d[[j]])
 }
+
+df$rownames <- as.character(row.names(df))
+df$rownames <- as.numeric(df$rownames)
 
 final <- get_bag_of_centroids (d ,vocab$word,clusters$cluster,num_clusters)
 end_features <- Sys.time()
 
 final <- as.data.frame(final)
-final$rating <- NA
-final$rating[1:nrow(train)] <- train$binary_rating
-final$rating[(nrow(train)+1):nrow(final)] <- test$binary_rating
-
+final$rownames <- as.character(row.names(final))
+final$rownames <- as.numeric(final$rownames)
+final <- merge.data.frame(final,df, by = "rownames")
+final$review_text <- NULL
+final$rownames <- NULL
 
 #Save thw train data
-saveRDS(final, paste0("./features/mixed/", to_log$technique, "_", ds_name, "_", type, "_", size, ".RDS"))
+saveRDS(final, paste0("./features/", to_log$technique, "_", "mix_" ,ds_name, "_", type, "_", size, ".RDS"))
 
 #save training log file----
 type <- "train"
@@ -156,27 +164,35 @@ to_log
 
 date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
 jsonlite::toJSON(to_log, pretty = T) %>% 
-  write(paste0("log_features/mixed/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
+  write(paste0("log_features/", to_log$technique, "_", "mix_" ,ds_name, "_", type, "_", size, "_", date, ".log"))
 
 ### Blind approach----
 start_features <- Sys.time()
 
 d <- NULL
 d <- strsplit(train$review_text," ")
-for(i in 1:nrow(train))
+for(k in 1:nrow(train))
 {
-  d[[i]] <- gsub("^\\s+|\\s+$", "",d[[i]])
+  d[[k]] <- gsub("^\\s+|\\s+$", "",d[[k]])
 }
+
+train$rownames <- as.character(row.names(train))
+train$rownames <- as.numeric(train$rownames)
 
 final <- get_bag_of_centroids (d ,vocab$word,clusters$cluster,num_clusters)
 end_features <- Sys.time()
 
 final <- as.data.frame(final)
-final$rating <- train$rating
+final$rownames <- as.character(row.names(final))
+final$rownames <- as.numeric(final$rownames)
+final <- merge.data.frame(final,train, by = "rownames")
+final$review_text <- NULL
+final$rownames <- NULL
+final <- as.data.frame(final)
 
 
 #Save thw train data-----
-saveRDS(final, paste0("./features/blind/", to_log$technique, "_", ds_name, "_", type, "_", size, ".RDS"))
+saveRDS(final, paste0("./features/", to_log$technique, "_", "blind_" ,ds_name, "_", type, "_", size, ".RDS"))
 
 #save training log file----
 to_log$computation_time <- list(
@@ -194,7 +210,7 @@ to_log
 
 date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
 jsonlite::toJSON(to_log, pretty = T) %>% 
-  write(paste0("log_features/blind/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
+  write(paste0("log_features/", to_log$technique, "_", "blind_" ,ds_name, "_", type, "_", size, "_", date, ".log"))
 
 rm(list = ls(all = TRUE))
 

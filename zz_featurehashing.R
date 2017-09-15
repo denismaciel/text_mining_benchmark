@@ -22,7 +22,7 @@ ds_name <- "imdb"
 
 # CHOOSE
 # type <- "test"
-type <- "train"
+#type <- "train"
 
 # CHOOSE
 #size = 100000
@@ -31,15 +31,14 @@ type <- "train"
 #size = 10000
 #size = 5000
 #size = 2500
-#size = 1000
-list_cuts <- as.list(c(1000,2500,5000,10000,20000,50000))
+size = 1000
 
 for (i in 1:6){
   
   ds_name <- "yelp"
   type <- "train"
   list_cuts <- as.list(c(1000,2500,5000,10000,20000,50000))
-  
+
   
   train <- readRDS("data_new/yelp_train.RDS")
   test <- readRDS("data_new/yelp_test.RDS")
@@ -48,7 +47,7 @@ for (i in 1:6){
     size <- list_cuts[[i]]
 
 
-technique <- "vectorization_feature_hashing"
+technique <- "vectorizationFeatureHashing"
 file_name <- paste0("data_new/", ds_name, "_", type, ".RDS")
 
 to_log <- list(
@@ -78,9 +77,9 @@ to_be_cleaned[(nrow(train) + 1):(nrow(train)+nrow(test)),] <- test
 test_dummy <- data.frame(row.names = (1:nrow(to_be_cleaned)))
 test_dummy$review_id <- NA
 test_dummy$review_id <- to_be_cleaned$review_id
-test_dummy$test <- NA
-test_dummy$test[1:size] <- 0
-test_dummy$test[(size+1):nrow(test_dummy)] <- 1
+test_dummy$type <- NA
+test_dummy$type[1:size] <- 0
+test_dummy$type[(size+1):nrow(test_dummy)] <- 1
 
 
 source("dw_cleaning.R")
@@ -89,12 +88,14 @@ df <- cleaned_out
 
 
 df <- merge.data.frame(df,test_dummy, by = "review_id")
+df$type <- NA
+df$type <- ifelse(df$type == "0","train", "test")
 
 remove(cleaned_out, df_sub, test_dummy)
 
-df_int <- split ( df,df$test)
-train <- df_int$`0`
-test <- df_int$`1`
+df_int <- split ( df,df$type)
+train <- df_int$train
+test <- df_int$test
 
 remove(df_int)
 end_cleaning <- Sys.time()
@@ -118,6 +119,7 @@ h_vectorizer <-  hash_vectorizer(hash_size = 2 ^ 14, ngram = c(1L, 2L))
 
 dtm <- create_dtm(it_train, h_vectorizer)
 dtm <- normalize(dtm, "l1") #normalizes dtm_train so that every row sums up to 1
+dtm <- as.data.frame(dtm)
 
 end_features <- Sys.time()
 
