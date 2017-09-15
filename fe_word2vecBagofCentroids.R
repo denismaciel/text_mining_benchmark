@@ -1,14 +1,16 @@
-library(data.table)
-library(tidyverse)
-library(stringr)
-install.packages("devtools")
-library(devtools)
-install_github("mukul13/rword2vec")
-library(rword2vec)
-library(Rcpp)
-library(RcppArmadillo)
-library(tm)
-library(rpart)
+if(!require("data.table")) install.packages("data.table"); library("data.table")
+if(!require("tidyverse")) install.packages("tidyverse"); library("tidyverse")
+if(!require("devtools")) install.packages("devtools"); library("devtools")
+if(!require("rword2vec")) install.packages("rword2vec"); library("rword2vec")
+if(!require("Rcpp")) install.packages("Rcpp"); library("Rcpp")
+if(!require("RcppArmadillo")) install.packages("RcppArmadillo"); library("RcppArmadillo")
+if(!require("tm")) install.packages("tm"); library("tm")
+if(!require("rpart")) install.packages("rpart"); library("rpart")
+
+
+
+
+
 #Bag of centroids
 for (i in 1:7){
 
