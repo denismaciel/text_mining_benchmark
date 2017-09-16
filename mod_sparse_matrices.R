@@ -10,18 +10,12 @@ library(xgboost)
 library(glmnet)
 # Pacakges to save the logs
 library(jsonlite)
+#================================ Header ================================ 
 
-# ============= Determine the model parameters and features to be used  =====================
-
-# technique <- "LDA"
-# dataset <- "amazonfinefood"
-# size <- "1e+05"
-# folder <- "/Users/denismaciel/Dropbox/Features/"
-
-# ============================= Start of Modelling ===================================
 to_log <- list(file_path = list(technique  = technique,
                                 dataset = dataset,
                                 size = size),
+               folder = folder,
                params_xg = list(
                  nrounds = 60,
                  objective = "binary:logistic",
@@ -45,106 +39,56 @@ to_log <- list(file_path = list(technique  = technique,
 )
 
 
-# ============================= Prepare the Data ===================================
-#Blind Seen
-blind_seen <- paste0(folder,
-                     paste(to_log$file_path$technique,
-                           "blind",
-                           to_log$file_path$dataset,
-                           "train",
-                           to_log$file_path$size,
-                           sep = "_"),
-                     ".RDS")
-to_log$paths_used <- list(blind_seen = blind_seen)
-blind_seen <- as_tibble(readRDS(blind_seen))
-#Blind Blind
-blind_blind <- paste0(folder,
-                      paste(to_log$file_path$technique,
-                            "blind",
-                            to_log$file_path$dataset,
-                            "test",
-                            "5000",
-                            sep = "_"),
-                      ".RDS")
-to_log$paths_used$blind_blind <- blind_blind
-blind_blind <- as_tibble(readRDS(blind_blind))
-#Mix
-mix <- paste0(folder,
-              paste(to_log$file_path$technique,
-                    "mix",
-                    to_log$file_path$dataset,
-                    "train",
-                    to_log$file_path$size,
-                    sep = "_"),
-              ".RDS")
-to_log$paths_used$mix <- mix
-mix <- as_tibble(readRDS(mix))
+# ============================= Load Data ===================================
+read_input <- function(approach, tt, feat_or_label){
 
-# Columns named after numbers cause problems when modelling: Change that
-col_ind <- str_detect(colnames(blind_seen), "[0-9]{1,5}")
-colnames(blind_seen)[col_ind] <- paste0("feat_", colnames(blind_seen[, col_ind]))
-
-col_ind <- str_detect(colnames(blind_blind), "[0-9]{1,5}")
-colnames(blind_blind)[col_ind] <- paste0("feat_", colnames(blind_blind[, col_ind]))
-
-col_ind <- str_detect(colnames(mix), "[0-9]{1,5}")
-colnames(mix)[col_ind] <- paste0("feat_", colnames(mix[, col_ind]))
-
-# ============================= Split Train and Test Sets ===================================
-
-# Blind Seen
-ind <- sample(1:nrow(blind_seen), round(nrow(blind_seen)*0.80), replace = FALSE)
-
-blind_seen_train <- blind_seen[ind, ]
-blind_seen_test <- blind_seen[-ind, ]
-
-blind_seen_train_label <- blind_seen_train[["binary_rating"]]
-if("type" %in% colnames(blind_seen_train)) {
-  blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating, -type)
-} else {
-  blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating)
+readRDS(paste0(to_log$folder,
+               paste(to_log$file_path$technique, approach, to_log$file_path$dataset, 
+                     tt, to_log$file_path$size, feat_or_label,
+                     sep = "_"),
+               ".RDS"))
 }
-blind_seen_train_featsparse <- Matrix::sparse.model.matrix(data = blind_seen_train_feat,
-                                                           object = binary_rating ~ .-1)
 
-blind_seen_test_label <- blind_seen_test[["binary_rating"]]
-if("type" %in% colnames(blind_seen_test)) {
-  blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating, -type)
-} else {
-  blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating)
-}
-blind_seen_test_featsparse <- Matrix::sparse.model.matrix(data = blind_seen_test_feat,
-                                                          object = binary_rating ~ .-1)
+# read_input <- function(approach, tt, feat_or_label){
+#   
+#   paste0(to_log$folder,
+#          paste(to_log$file_path$technique, approach, to_log$file_path$dataset, 
+#                tt, to_log$file_path$size, feat_or_label,
+#                sep = "_"),
+#          ".RDS")
+# }
 
-# Blind Blind (Used as test set only)
-blind_blind_label <- blind_blind[["binary_rating"]]
-if("type" %in% colnames(blind_blind)) {
-  blind_blind_feat <- blind_blind %>% select(-review_id, -rating, -type)
-} else {
-  blind_blind_feat <- blind_blind %>% select(-review_id, -rating)
-}
-blind_blind_featsparse <- Matrix::sparse.model.matrix(data = blind_blind_feat,
-                                                      object = binary_rating ~ .-1)
+blind_test_featsparse <- read_input("blind", "test", "feat")
+blind_train_featsparse <- read_input("blind", "train", "feat")
+blind_train <- read_input("blind", "train", "label")
+blind_test <- read_input("blind", "test", "label")
 
-# Mix
-mix_train <- mix[mix$type == "train", ]
-mix_test <- mix[mix$type == "test", ]
+mix_test_featsparse <- read_input("mix", "test", "feat")
+mix_train_featsparse <- read_input("mix", "train", "feat")
+mix_train <- read_input("mix", "train", "label")
+mix_test <- read_input("mix", "test", "label")
 
-mix_train_label <- mix_train[["binary_rating"]]
-mix_train_feat <- mix_train %>% select(-review_id, -rating, -type)
-mix_train_featsparse <- Matrix::sparse.model.matrix(data = mix_train_feat,
-                                                    object = binary_rating ~. -1)
+# ======================= Create blind_seen & blind_test ========================
 
-mix_test_label <- mix_test[["binary_rating"]]
-mix_test_feat <- mix_test %>% select(-review_id, -rating, -type)
-mix_test_featsparse <- Matrix::sparse.model.matrix(data = mix_test_feat,
-                                                   object = binary_rating ~. -1)
-# Garbage collection
-rm(blind_seen_train_feat,
-   blind_seen_test_feat,
-   mix_train_feat,
-   mix_test_feat,
-   blind_blind_feat)
+ind <- sample(1:nrow(blind_train_featsparse), round(nrow(blind_train_featsparse)*0.80), replace = FALSE)
+
+blind_seen_train_label <- blind_train[ind, ]$binary_rating
+blind_seen_train_featsparse <- blind_train_featsparse[ind, ]
+
+blind_seen_test_label <- blind_train[-ind, ]$binary_rating
+blind_seen_test_featsparse <- blind_train_featsparse[-ind, ]
+
+blind_blind_label <- blind_test$binary_rating
+
+# Blind Blind cannot contain words that are not present in blind_seem
+blind_blind_featsparse <- blind_test_featsparse
+
+colnames <- colnames(blind_blind_featsparse)
+col_ind <- colnames %in% unique(c(colnames(blind_seen_train_featsparse)))
+blind_blind_featsparse <- blind_blind_featsparse[, colnames[col_ind]]
+
+mix_train_label <- mix_train$binary_rating
+mix_test_label <- mix_test$binary_rating
 
 # ============================= Train the Model ===================================
 run_models <- function(features, label){
@@ -175,7 +119,7 @@ run_models <- function(features, label){
 }
 
 # TRAIN!!!
-mod_blind_seen_train <- run_models(label = blind_seen_train$binary_rating,
+mod_blind_seen_train <- run_models(label = blind_seen_train_label,
                                    features = blind_seen_train_featsparse)
 mod_mix <- run_models(label = mix_train_label,
                       features = mix_train_featsparse)
@@ -183,10 +127,17 @@ mod_mix <- run_models(label = mix_train_label,
 # ============================= Predict on Test Set ===================================
 make_predicitons <- function(features, label, models){
   
-  pred_test <- data_frame(pred_glmnet = predict(models$mod_glmnet, features, type = 'response')[, 1],
-                          pred_xgboost = predict(models$mod_xgboost, features, type = 'response'),
-                          actual = label)
-  
+  pred_test <- data_frame(
+    pred_glmnet = tryCatch(
+      {predict(models$mod_glmnet, features, type = 'response')[, 1]},
+      error = function(e) {
+        return(0)
+      }
+  ),
+  pred_xgboost = predict(models$mod_xgboost, features, type = 'response'),
+  actual = label
+  )
+
   return(pred_test)
 }
 
@@ -254,6 +205,12 @@ assess_model <- function(pred_test){
     select(model = .rownames, auc = X0.vs..1) %>%
     mutate(model = str_replace(model, "pred_", ""))
   
+  # If glmnet does not work assign zeroes to its metrics
+  if (sum(pred_test$pred_glmnet) == 0) {
+    auc[auc$model == "glmnet", ]$auc <- 0 
+    accuracy[accuracy$model == "glmnet", ]$acc_max <- 0 
+  }
+  
   return(list(accuracy, auc))
 }
 
@@ -277,4 +234,5 @@ file <-  paste0("log/",
 write(log, file)
 
 # Remove everything except "loop_grid" and "folder", which is used to control loop
-rm(list = setdiff(ls(), c("loop_grid", "folder", "METHOD")))
+rm(list = setdiff(ls(), c("loop_grid", "folder")))
+

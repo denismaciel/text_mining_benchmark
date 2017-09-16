@@ -13,9 +13,9 @@ library(jsonlite)
 
 # ============= Determine the model parameters and features to be used  =====================
 
-technique <- "LSA"
-dataset <- "amazonfinefood"
-size <- "50000"
+# technique <- "LSA"
+# dataset <- "amazonfinefood"
+# size <- "50000"
 
 to_log <- list(file_path = list(technique  = technique,
                                 dataset = dataset,
@@ -44,8 +44,6 @@ to_log <- list(file_path = list(technique  = technique,
 
 
 # ============================= Prepare the Data ===================================
-folder <- "/Users/denismaciel/Desktop/ben/"
-
 #foldin
 foldin <- paste0(folder,
               paste(to_log$file_path$technique,
@@ -198,12 +196,6 @@ file <-  paste0("log/",
                 ".log")
 
 write(log, file)
-# ============================= Print Results to Screen ===================================
-# cat(cat(paste0("TEST DATASET: ",to_log$results_test[[1]]$model, " got an Accuracy of:\n\t", to_log$results_test[[1]]$acc_max), sep = "\n"),
-#     cat(paste0("TEST DATASET: ", to_log$results_test[[2]]$model, " got an AUC of:\n\t", to_log$results_test[[2]]$auc), sep = "\n"))
-# 
-# cat(cat(paste0("BLIND DATASET: ",to_log$results_blind[[1]]$model, " got an Accuracy of:\n\t", to_log$results_blind[[1]]$acc_max), sep = "\n"),
-#     cat(paste0("BLIND DATASET: ", to_log$results_blind[[2]]$model, " got an AUC of:\n\t", to_log$results_blind[[2]]$auc), sep = "\n"))
 
 # Clear workspace
-rm(list = ls())
+rm(list = setdiff(ls(), c("loop_grid", "folder", "METHOD")))
