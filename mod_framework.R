@@ -100,45 +100,41 @@ blind_seen_test <- blind_seen[-ind, ]
 
 blind_seen_train_label <- blind_seen_train[["binary_rating"]]
 if("type" %in% colnames(blind_seen_train)) {
-  blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating, -type)
+  blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating, -type, -binary_rating)
 } else {
-  blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating)
+  blind_seen_train_feat <- blind_seen_train %>% select(-review_id, -rating, -binary_rating)
 }
-blind_seen_train_featsparse <- Matrix::sparse.model.matrix(data = blind_seen_train_feat,
-                                                           object = binary_rating ~ .-1)
+blind_seen_train_featsparse <- as(as.matrix(blind_seen_train_feat), "dgCMatrix")
 
 blind_seen_test_label <- blind_seen_test[["binary_rating"]]
 if("type" %in% colnames(blind_seen_test)) {
-  blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating, -type)
+  blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating, -type, -binary_rating)
 } else {
-  blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating)
+  blind_seen_test_feat <- blind_seen_test %>% select(-review_id, -rating, -binary_rating)
 }
-blind_seen_test_featsparse <- Matrix::sparse.model.matrix(data = blind_seen_test_feat,
-                                                          object = binary_rating ~ .-1)
+blind_seen_test_featsparse <- as(as.matrix(blind_seen_test_feat), "dgCMatrix")
 
 # Blind Blind (Used as test set only)
 blind_blind_label <- blind_blind[["binary_rating"]]
 if("type" %in% colnames(blind_blind)) {
-  blind_blind_feat <- blind_blind %>% select(-review_id, -rating, -type)
+  blind_blind_feat <- blind_blind %>% select(-review_id, -rating, -type, -binary_rating)
 } else {
-  blind_blind_feat <- blind_blind %>% select(-review_id, -rating)
+  blind_blind_feat <- blind_blind %>% select(-review_id, -rating, -binary_rating)
 }
-blind_blind_featsparse <- Matrix::sparse.model.matrix(data = blind_blind_feat,
-                                                      object = binary_rating ~ .-1)
+blind_blind_featsparse <- as(as.matrix(blind_blind_feat), "dgCMatrix")
 
 # Mix
 mix_train <- mix[mix$type == "train", ]
 mix_test <- mix[mix$type == "test", ]
 
 mix_train_label <- mix_train[["binary_rating"]]
-mix_train_feat <- mix_train %>% select(-review_id, -rating, -type)
-mix_train_featsparse <- Matrix::sparse.model.matrix(data = mix_train_feat,
-                                                    object = binary_rating ~. -1)
+mix_train_feat <- mix_train %>% select(-review_id, -rating, -type, -binary_rating)
+mix_train_featsparse <- as(as.matrix(mix_train_feat), "dgCMatrix")
 
 mix_test_label <- mix_test[["binary_rating"]]
-mix_test_feat <- mix_test %>% select(-review_id, -rating, -type)
-mix_test_featsparse <- Matrix::sparse.model.matrix(data = mix_test_feat,
-                                                   object = binary_rating ~. -1)
+mix_test_feat <- mix_test %>% select(-review_id, -rating, -type, -binary_rating)
+mix_test_featsparse <- as(as.matrix(mix_test_feat), "dgCMatrix")
+
 # Garbage collection
 rm(blind_seen_train_feat,
    blind_seen_test_feat,
