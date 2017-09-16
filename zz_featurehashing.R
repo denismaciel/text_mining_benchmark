@@ -2,23 +2,19 @@
 
 # ============================= Header ===================================
 # General Purpose Packages
-library(data.table)
-library(tidyverse)
-library(stringr)
-# Packages to prepare the data
-library(Matrix)
- library(rword2vec)
-library(text2vec)
+
+if(!require("data.table")) install.packages("data.table"); library("data.table")
+if(!require("tidyverse")) install.packages("tidyverse"); library("tidyverse")
+if(!require("stringr")) install.packages("stringr"); library("stringr")
+if(!require("Matrix")) install.packages("Matrix"); library("Matrix")
+if(!require("text2vec")) install.packages("text2vec"); library("text2vec")
+
 
 # ============================= Prepare the Data ===================================
 
 
 # CHOOSE
-#ds_name <- "amazonBooks"
-#ds_name <- "amazonfinefood"
-ds_name <- "imdb"
-#ds_name <- "twitter"
-#ds_name <- "yelp"
+
 
 # CHOOSE
 # type <- "test"
@@ -31,19 +27,22 @@ ds_name <- "imdb"
 #size = 10000
 #size = 5000
 #size = 2500
-size = 1000
 
-for (i in 1:6){
+
+
+for (i in 1:5){
   
-  ds_name <- "yelp"
+  train <- readRDS("data_new/imdb_train.RDS")
+  test <- readRDS("data_new/imdb_test.RDS")
+  
+  #ds_name <- "amazonBooks"
+  #ds_name <- "amazonfinefood"
+  ds_name <- "imdb"
+  #ds_name <- "twitter"
+  #ds_name <- "yelp" 
   type <- "train"
-  list_cuts <- as.list(c(1000,2500,5000,10000,20000,50000))
+  list_cuts <- as.list(c(1000,2500,5000,10000,20000,50000, 100000))
 
-  
-  train <- readRDS("data_new/yelp_train.RDS")
-  test <- readRDS("data_new/yelp_test.RDS")
-  
-  
     size <- list_cuts[[i]]
 
 
@@ -66,8 +65,8 @@ train <- df_sub
 
 to_be_cleaned <- data.frame(row.names = (1:(nrow(train)+nrow(test))))
 to_be_cleaned$review_id <- NA
-to_be_cleaned$binary_rating <- NA
 to_be_cleaned$rating <- NA
+to_be_cleaned$binary_rating <- NA
 to_be_cleaned$review_text <- NA
 
 to_be_cleaned[1:nrow(train),] <- train
@@ -88,8 +87,7 @@ df <- cleaned_out
 
 
 df <- merge.data.frame(df,test_dummy, by = "review_id")
-df$type <- NA
-df$type <- ifelse(df$type == "0","train", "test")
+df$type <- ifelse(df$type == 0,"train", "test")
 
 remove(cleaned_out, df_sub, test_dummy)
 
@@ -119,12 +117,11 @@ h_vectorizer <-  hash_vectorizer(hash_size = 2 ^ 14, ngram = c(1L, 2L))
 
 dtm <- create_dtm(it_train, h_vectorizer)
 dtm <- normalize(dtm, "l1") #normalizes dtm_train so that every row sums up to 1
-dtm <- as.data.frame(dtm)
 
 end_features <- Sys.time()
 
 #Save thw train data
-saveRDS(dtm, paste0("./features/mixed/", to_log$technique, "_", ds_name, "_", type, "_", size, ".RDS"))
+saveRDS(dtm, paste0("./features/", to_log$technique, "_", "mix_" ,ds_name, "_", type, "_", size, ".RDS"))
 
 #save mixed log file
 to_log$computation_time <- list(
@@ -139,7 +136,7 @@ to_log
 
 date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
 jsonlite::toJSON(to_log, pretty = T) %>% 
-  write(paste0("log_features/mixed/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
+  write(paste0("log_features/", to_log$technique, "_", "mix_" ,ds_name, "_", type, "_", size, "_", date, ".log"))
 
 remove(df,dtm, vocab, pruned_vocab)
 
@@ -164,7 +161,7 @@ end_features <- Sys.time()
 
 
 #Save thw train data
-saveRDS(dtm_train, paste0("./features/blind/", to_log$technique, "_", ds_name, "_", type, "_", size, ".RDS"))
+saveRDS(dtm_train, paste0("./features/", to_log$technique, "_", "blind_", ds_name, "_", type, "_", size, ".RDS"))
 
 #save training log file
 to_log$computation_time <- list(
@@ -179,7 +176,7 @@ to_log
 
 date <- str_replace_all(strftime(Sys.time() , "%Y-%m-%dT%H:%M:%S"), ":", "")
 jsonlite::toJSON(to_log, pretty = T) %>% 
-  write(paste0("log_features/blind/", to_log$technique, "_", ds_name, "_", type, "_", size, "_", date, ".log"))
+  write(paste0("log_features/", to_log$technique, "_", "blind_",ds_name, "_", type, "_", size, "_", date, ".log"))
 
 
 rm(list = ls(all = TRUE))
