@@ -67,14 +67,13 @@ mix_train <- mix[mix$type == "train", ]
 mix_test <- mix[mix$type == "test", ]
 
 mix_train_label <- mix_train[["binary_rating"]]
-mix_train_feat <- mix_train %>% select(-review_id, -rating, -type)
-mix_train_featsparse <- Matrix::sparse.model.matrix(data = mix_train_feat,
-                                                       object = binary_rating ~. -1)
+mix_train_feat <- mix_train %>% select(-review_id, -rating, -type, -binary_rating)
+mix_train_featsparse <- as(as.matrix(mix_train_feat), "dgCMatrix")
 
 mix_test_label <- mix_test[["binary_rating"]]
-mix_test_feat <- mix_test %>% select(-review_id, -rating, -type)
-mix_test_featsparse <- Matrix::sparse.model.matrix(data = mix_test_feat,
-                                                      object = binary_rating ~. -1)
+mix_test_feat <- mix_test %>% select(-review_id, -rating, -type, -binary_rating)
+mix_test_featsparse <- as(as.matrix(mix_test_feat), "dgCMatrix")
+
 # Garbage collection
 rm(mix_train_feat,
    mix_test_feat)

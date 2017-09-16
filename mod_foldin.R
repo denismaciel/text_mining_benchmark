@@ -13,10 +13,6 @@ library(jsonlite)
 
 # ============= Determine the model parameters and features to be used  =====================
 
-# technique <- "LSA"
-# dataset <- "amazonfinefood"
-# size <- "50000"
-
 to_log <- list(file_path = list(technique  = technique,
                                 dataset = dataset,
                                 size = size),
@@ -67,14 +63,13 @@ foldin_train <- foldin[foldin$type == "train", ]
 foldin_test <- foldin[foldin$type == "test", ]
 
 foldin_train_label <- foldin_train[["binary_rating"]]
-foldin_train_feat <- foldin_train %>% select(-review_id, -rating, -type)
-foldin_train_featsparse <- Matrix::sparse.model.matrix(data = foldin_train_feat,
-                                                    object = binary_rating ~. -1)
+foldin_train_feat <- foldin_train %>% select(-review_id, -rating, -type, -binary_rating)
+foldin_train_featsparse <- as(as.matrix(foldin_train_feat), "dgCMatrix")
+                                                    
 
 foldin_test_label <- foldin_test[["binary_rating"]]
-foldin_test_feat <- foldin_test %>% select(-review_id, -rating, -type)
-foldin_test_featsparse <- Matrix::sparse.model.matrix(data = foldin_test_feat,
-                                                   object = binary_rating ~. -1)
+foldin_test_feat <- foldin_test %>% select(-review_id, -rating, -type, -binary_rating)
+foldin_test_featsparse <- as(as.matrix(foldin_test_feat), "dgCMatrix")
 # Garbage collection
 rm(foldin_train_feat,
    foldin_test_feat)
