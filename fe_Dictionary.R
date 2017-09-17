@@ -8,6 +8,10 @@ if(!require("caret")) install.packages("caret"); library("caret")
 if(!require("stringr")) install.packages("stringr"); library("stringr")
 if(!require("dplyr")) install.packages("dplyr"); library("dplyr")
 if(!require("reshape")) install.packages("reshape"); library("reshape")
+if(!require("syuzhet")) install.packages("syuzhet"); library("syuzhet")
+if(!require("pander")) install.packages("pander"); library("pander")
+if(!require("ggplot2")) install.packages("ggplot2"); library("ggplot2")
+if(!require("e1071")) install.packages("e1071"); library("e1071")
 
 # SPECIFY SETTINGS----
 # NB!!! Select the dataset you need
@@ -61,12 +65,33 @@ source("dw_cleaning.R")
 end_cleaning <- Sys.time()
 
 
+
+# ============================= Creating Features 1===================================
+#METHOD1: SYUZHET PACKAGE
+NRC <-get_nrc_sentiment(cleaned_out$review_text)
+NRC$count <- rowSums(NRC)
+
+# POSITIVE OR NEGATIVE POLARITY
+NRC$valence <- (NRC[, 9]*-1) + NRC[, 10]
+
+# VISUALISATION
+barplot(
+  sort(colSums(prop.table(NRC[, 1:8]))), 
+  horiz = TRUE, 
+  cex.names = 0.7, 
+  las = 1, 
+  main = "NRC - Emotions in percentages", xlab="Percentage",
+  col="blue"
+)
+
+
+# ============================= Creating Features 2===================================
+#METHOD2: TIDYTEXT PACKAGE 
 # CREATE TIDYTEXT ---
 start_dtm <- Sys.time()
 source("dw_tt_dictionary.R")
 end_dtm <- Sys.time()
 
-# ============================= Creating Features ===================================
 start_features <- Sys.time()
 #INPUT DICTIONARY
 AFINN <- sentiments %>%
@@ -83,8 +108,7 @@ reviews_sentiment2 <- rename(reviews_sentiment2, c(Group.1="review_id"))
 total <- merge(cleaned_out,reviews_sentiment2,by="review_id")
 
 #THRESHOLD
-mean(total$afinn_score) #1.056463
-total$sentimentcategory<-ifelse(total$afinn_score>1.056463,1,0)
+total$sentimentcategory<-ifelse(total$afinn_score>mean(total$afinn_score) ,1,0)
 ratings_labeled <- total$binary_rating
 ratings_predicted<-total$sentimentcategory
 table(ratings_predicted)
