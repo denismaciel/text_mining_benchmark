@@ -61,7 +61,7 @@ rm(raw_data)
 
 # CLEAN DATA ----
 start_cleaning <- Sys.time()
-source("dw_cleaning.R")
+source("dw_cleaning_dictionary.R")
 end_cleaning <- Sys.time()
 
 
